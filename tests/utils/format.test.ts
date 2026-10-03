@@ -1,6 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import { LEVEL_COUNT } from '../../src/game/config/identity';
-import { formatCounter } from '../../src/utils/format';
+import { formatCount, formatCounter, formatQueryId } from '../../src/utils/format';
+
+describe('formatCount', () => {
+  it('zero-pads to three digits', () => {
+    expect(formatCount(0)).toBe('000');
+    expect(formatCount(7)).toBe('007');
+    expect(formatCount(42)).toBe('042');
+    expect(formatCount(999)).toBe('999');
+  });
+
+  it('does not truncate larger numbers', () => {
+    expect(formatCount(1234)).toBe('1234');
+  });
+});
+
+describe('formatQueryId', () => {
+  it('names a query the way the machine’s log prints it', () => {
+    expect(formatQueryId(1)).toBe('QUERY_001');
+    expect(formatQueryId(4)).toBe('QUERY_004');
+    expect(formatQueryId(120)).toBe('QUERY_120');
+  });
+});
 
 describe('formatCounter', () => {
   it('formats the first level as shown in the laboratory HUD', () => {

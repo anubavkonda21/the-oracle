@@ -154,3 +154,25 @@
 .laboratory__footer > :last-child {
   justify-self: end;
 }
+
+/*
+ * The input console sits directly beneath the machine. The stage is always
+ * centred in the window, so "50%" is the middle of the design frame and the
+ * machine's offset from it (set by the view) can be added in stage units.
+ */
+.laboratory__console {
+  position: absolute;
+  top: calc(50% + (var(--machine-offset-y) + 206) * var(--u));
+  right: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+}
+
+/* The experiment log runs down the right-hand side, starting level with the top of the machine. */
+.laboratory__log {
+  position: absolute;
+  top: calc(50% + (var(--machine-offset-y) - 150) * var(--u));
+  right: var(--edge-x);
+  width: max(236px, calc(296 * var(--u)));
+}

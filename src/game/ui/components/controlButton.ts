@@ -43,6 +43,28 @@ export function createControlButton(options: ControlButtonOptions): HTMLButtonEl
   }
 
   button.disabled = disabled;
-  button.addEventListener('click', onActivate);
+  button.addEventListener('click', () => {
+    if (!isUnavailable(button)) {
+      onActivate();
+    }
+  });
   return button;
+}
+
+/**
+ * Makes a control temporarily unusable WITHOUT removing it from the keyboard
+ * focus order. A truly `disabled` button drops focus the moment it is
+ * disabled, which would throw a keyboard user out of the control they just
+ * pressed; `aria-disabled` keeps them where they are.
+ */
+export function setUnavailable(control: HTMLElement, unavailable: boolean): void {
+  if (unavailable) {
+    control.setAttribute('aria-disabled', 'true');
+  } else {
+    control.removeAttribute('aria-disabled');
+  }
+}
+
+export function isUnavailable(control: HTMLElement): boolean {
+  return control.getAttribute('aria-disabled') === 'true';
 }

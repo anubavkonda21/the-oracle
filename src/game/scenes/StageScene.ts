@@ -13,6 +13,11 @@ import { getServices } from '../systems/services';
 export abstract class StageScene extends Phaser.Scene {
   private isLeaving = false;
 
+  /** True from the moment this scene starts fading out. Scenes use it to stop reacting to input on the way out. */
+  protected get isLeavingStage(): boolean {
+    return this.isLeaving;
+  }
+
   /** Call at the start of `create()`: frames the camera, shows this scene's interface and fades the stage in. */
   protected enterStage(view: HTMLElement): void {
     this.isLeaving = false;
@@ -25,6 +30,24 @@ export abstract class StageScene extends Phaser.Scene {
     ui.show(view);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => ui.clear());
     stageFade.fadeIn();
+  }
+
+  /**
+   * Runs a callback after a real-time delay, unless the scene shuts down first.
+   *
+   * Use this for anything the game's state depends on. Phaser's own clock
+   * (`this.time`) is driven by rendered frames and deliberately slows down
+   * when frames are scarce, so a one-second wait can take a minute in a
+   * throttled or struggling browser. Leave Phaser's clock to animation, where
+   * running slow is harmless.
+   */
+  protected afterDelay(delayMs: number, callback: () => void): void {
+    const timer = window.setTimeout(() => {
+      this.events.off(Phaser.Scenes.Events.SHUTDOWN, cancel);
+      callback();
+    }, delayMs);
+    const cancel = (): void => window.clearTimeout(timer);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, cancel);
   }
 
   /** Fades the stage out, then starts another scene. Repeat calls while already leaving are ignored. */

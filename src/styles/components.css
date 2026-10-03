@@ -98,27 +98,32 @@
   color: var(--color-text-secondary);
 }
 
-.control:not(:disabled):hover,
-.control:not(:disabled):focus-visible {
+/*
+ * A control is out of use either because it is `disabled`, or — when it must
+ * stay focusable for the keyboard — because it is marked aria-disabled.
+ */
+.control:not(:disabled, [aria-disabled='true']):hover,
+.control:not(:disabled, [aria-disabled='true']):focus-visible {
   border-color: var(--color-text-primary);
   background-color: var(--color-surface);
   color: var(--color-text-primary);
   transform: translateY(-1px);
 }
 
-.control:not(:disabled):hover::before,
-.control:not(:disabled):focus-visible::before {
+.control:not(:disabled, [aria-disabled='true']):hover::before,
+.control:not(:disabled, [aria-disabled='true']):focus-visible::before {
   opacity: 1;
   transform: translateX(0);
 }
 
-.control:not(:disabled):active {
+.control:not(:disabled, [aria-disabled='true']):active {
   background-color: var(--color-border);
   transform: translateY(0);
   transition-duration: 60ms;
 }
 
-.control:disabled {
+.control:disabled,
+.control[aria-disabled='true'] {
   border-color: var(--color-border);
   color: var(--color-text-secondary);
   opacity: 0.55;
@@ -126,8 +131,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .control:not(:disabled):hover,
-  .control:not(:disabled):focus-visible,
+  .control:not(:disabled, [aria-disabled='true']):hover,
+  .control:not(:disabled, [aria-disabled='true']):focus-visible,
   .control::before {
     transform: none;
   }

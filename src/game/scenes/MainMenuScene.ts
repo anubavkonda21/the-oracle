@@ -1,4 +1,5 @@
 import { SCENE_KEYS } from '../config/sceneKeys';
+import { listenForKeyPresses } from '../systems/keyboard';
 import { createMainMenuView } from '../ui/views/mainMenuView';
 import { StageScene } from './StageScene';
 
@@ -14,6 +15,10 @@ export class MainMenuScene extends StageScene {
     this.enterStage(createMainMenuView({ onEnter: enterLaboratory }));
 
     // The Enter key works from anywhere, not only while the ENTER control has focus.
-    this.input.keyboard?.on('keydown-ENTER', enterLaboratory);
+    listenForKeyPresses(this, (event) => {
+      if (event.key === 'Enter' && !event.repeat) {
+        enterLaboratory();
+      }
+    });
   }
 }

@@ -1,0 +1,217 @@
+/*
+ * Components for operating the machine: the binary input, the console that
+ * holds it, and the experiment log. Builders are in src/game/ui/components/.
+ */
+
+/* ---------- Console: label, bits and the ask control ---------- */
+
+.console {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: calc(20 * var(--u));
+  row-gap: calc(10 * var(--u));
+}
+
+.console__label {
+  grid-column: 1 / -1;
+}
+
+/* The ask control is as tall as the bits beside it. */
+.console .control {
+  align-self: stretch;
+}
+
+/*
+ * In the narrowest windows the game still runs in (900–1099px), the console
+ * and the log would meet. Dropping the key hint from the ask control keeps
+ * them apart; Enter still works.
+ */
+@media (max-width: 1099px) {
+  .console .control__shortcut {
+    display: none;
+  }
+}
+
+/* ---------- Bit input: a row of bits set by hand ---------- */
+
+.bit-input {
+  display: flex;
+  gap: calc(8 * var(--u));
+}
+
+/*
+ * One bit. A 0 is an empty cell and a 1 a filled one, so a pattern can be
+ * read at a glance — but the digit is always printed too, so the value never
+ * depends on telling light from dark.
+ */
+.bit {
+  position: relative;
+  width: max(36px, calc(46 * var(--u)));
+  height: max(44px, calc(58 * var(--u)));
+  padding: 0;
+  border: var(--hairline) solid var(--color-text-primary);
+  border-radius: var(--radius);
+  background-color: transparent;
+  color: var(--color-text-primary);
+  font-family: var(--font-machine);
+  font-size: max(16px, calc(22 * var(--u)));
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    background-color var(--motion-control) var(--ease-precise),
+    color var(--motion-control) var(--ease-precise),
+    transform var(--motion-control) var(--ease-precise);
+}
+
+.bit[data-value='1'] {
+  background-color: var(--color-text-primary);
+  color: var(--color-background);
+}
+
+.bit:not([aria-disabled='true']):hover {
+  transform: translateY(-1px);
+}
+
+.bit[data-value='0']:not([aria-disabled='true']):hover {
+  background-color: var(--color-surface);
+}
+
+.bit:not([aria-disabled='true']):active {
+  transform: translateY(0);
+  transition-duration: 60ms;
+}
+
+.bit[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Typing cursor: a short rule under the bit the next typed digit will set. */
+.bit[data-cursor]::after {
+  content: '';
+  position: absolute;
+  right: 20%;
+  bottom: calc(-7 * var(--u));
+  left: 20%;
+  height: 2px;
+  background: var(--color-text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bit:not([aria-disabled='true']):hover {
+    transform: none;
+  }
+}
+
+/* ---------- Experiment log ---------- */
+
+.log {
+  display: flex;
+  flex-direction: column;
+  /* Grows with its entries up to this height, then scrolls. */
+  max-height: calc(520 * var(--u));
+}
+
+.log .panel__content {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  font-family: var(--font-machine);
+  font-size: var(--type-micro);
+  line-height: 1;
+  letter-spacing: var(--tracking-machine);
+}
+
+.log__count {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: calc(10 * var(--u));
+  border-bottom: var(--hairline) solid var(--color-border);
+}
+
+.log__empty {
+  padding-top: calc(12 * var(--u));
+}
+
+.log__scroll {
+  min-height: 0;
+  overflow-y: auto;
+  /* Lets the pointer scroll it; the rest of the interface layer ignores the pointer. */
+  pointer-events: auto;
+  /*
+   * No scrollbar is drawn: on some systems it would sit on top of the output
+   * column. The log follows its newest entry by itself, and older entries are
+   * reached with the wheel, a trackpad or the arrow keys.
+   */
+  scrollbar-width: none;
+}
+
+.log__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.log__scroll:focus-visible {
+  outline-offset: -2px;
+}
+
+.log__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.log__table th,
+.log__table td {
+  padding: calc(7 * var(--u)) 0;
+  font-weight: 400;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.log__table th:last-child,
+.log__table td:last-child {
+  text-align: right;
+}
+
+/* The column headings stay in view while the entries scroll beneath them. */
+.log__table thead th {
+  position: sticky;
+  top: 0;
+  /* Above the entries, whose first cells are positioned for the marker. */
+  z-index: 1;
+  padding-top: calc(12 * var(--u));
+  background: var(--color-surface);
+}
+
+.log__table td {
+  border-top: var(--hairline) solid var(--color-border);
+}
+
+/* The first column keeps a gutter for the marker, so every entry lines up whether or not it is marked. */
+.log__table th:first-child,
+.log__table td:first-child {
+  padding-left: 1.3em;
+}
+
+.log__table td:first-child {
+  position: relative;
+}
+
+/* The newest entry is marked with the signal dot, and set slightly heavier so it is not marked by colour alone. */
+.log__table tr[data-latest] td {
+  font-weight: 600;
+}
+
+.log__table tr[data-latest] td:first-child::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0.5em;
+  height: 0.5em;
+  margin-top: -0.25em;
+  border-radius: 50%;
+  background: var(--color-signal-red);
+}

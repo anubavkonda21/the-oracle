@@ -7,11 +7,12 @@ A browser-playable mystery game for the Quriosity quantum game-development compe
 
 ## Status
 
-**Checkpoint 03 — quantum Oracle and Deutsch–Jozsa.** The foundation, the quantum state-vector engine and the Deutsch–Jozsa algorithm are in place. There is deliberately **no gameplay, no quantum visuals and no story yet**, and the game does not use the engine yet; `src/story/`, `src/data/` and `src/audio/` are empty placeholders for later checkpoints.
+**Checkpoint 04 — first playable Oracle prototype.** The game can now be played in its simplest form: give the machine a 6-bit input, watch it work, read its one-bit answer, and see the exchange added to an experiment log. There is deliberately **no investigation to complete, no quantum mode, no quantum visuals and no story yet**; `src/story/`, `src/data/` and `src/audio/` are empty placeholders for later checkpoints.
 
 What exists today:
 
-- Main menu → `ENTER` → placeholder laboratory → `ESC` / `RETURN` back to the menu
+- Main menu → `ENTER` → the laboratory → `ESC` / `RETURN` back to the menu
+- A playable loop in the laboratory: binary input → ask → processing → output → experiment log (see [Checkpoint 04](#checkpoint-04--first-playable-oracle-prototype))
 - A design system (colour, type, motion tokens) shared by CSS and canvas code
 - A responsive 1440 × 900 stage that scales to the window and stays sharp on high-density screens
 - A standalone quantum state-vector simulator in `src/quantum/` (see [Checkpoint 02](#checkpoint-02--quantum-engine))
@@ -26,8 +27,9 @@ The game is built in numbered checkpoints, one commit each. Every checkpoint lea
 | [01 — Foundation](#checkpoint-01--foundation) | [`255b82c`](https://github.com/anubavkonda21/the-oracle/commit/255b82c2be80722d53918c493b68bd2c45a91167) `chore: initialize The Oracle project` | Vite + TypeScript + Phaser 3 + Vitest project; Boot, Preload, Main Menu and Laboratory scenes; the visual identity and design system; the responsive stage. | 61 |
 | [02 — Quantum Engine](#checkpoint-02--quantum-engine) | [`e305f67`](https://github.com/anubavkonda21/the-oracle/commit/e305f67a67f58e4e5bdf422589906e6fd1c97bb7) `feat: add quantum state-vector engine` | Complex numbers; n-qubit state vectors; I, X, Z and H gates on any qubit; probabilities; destructive measurement and non-destructive sampling. | 249 |
 | [03 — Quantum Oracle and Deutsch–Jozsa](#checkpoint-03--quantum-oracle-and-deutschjozsa) | [`0f3ae8d`](https://github.com/anubavkonda21/the-oracle/commit/0f3ae8d64611bc037f37ca670724fbc6a55501dc) `feat: add quantum oracle and Deutsch–Jozsa algorithm` | Boolean functions; the bit-flip oracle; the Deutsch–Jozsa algorithm; basis permutations and partial measurement on the state vector. | 398 |
+| [04 — First Playable Oracle Prototype](#checkpoint-04--first-playable-oracle-prototype) | _not yet committed_ | The game-level Oracle; the 6-bit input; the machine's processing and answer; the experiment log. | 478 |
 
-Still to come: gameplay, the classical investigation, quantum visuals, story and sound. Commits that only touch documentation are not listed here; the complete log is on the [commits page](https://github.com/anubavkonda21/the-oracle/commits/main).
+Still to come: the full investigation, quantum mode, quantum visuals, story and sound. Commits that only touch documentation are not listed here; the complete log is on the [commits page](https://github.com/anubavkonda21/the-oracle/commits/main).
 
 ## Stack
 
@@ -66,17 +68,18 @@ src/
 ├── game/
 │   ├── config/             design tokens, display maths, scene keys, Phaser config
 │   ├── scenes/             Boot → Preload → MainMenu ⇄ Laboratory
-│   ├── entities/           things on the canvas (the placeholder machine)
-│   ├── systems/            shared services, font loading, desktop gate
+│   ├── entities/           things on the canvas (the machine)
+│   ├── systems/            shared services, keyboard, font loading, desktop gate
+│   │   └── oracle/         the machine's game logic: the Oracle, the input model, the prototype rule
 │   ├── ui/                 the HTML layer: components and per-scene views
 │   └── effects/            paper grain, scene fade, motion preference
-├── styles/                 tokens → fonts → base → shell → components → views
+├── styles/                 tokens → fonts → base → shell → components → oracle → views
 ├── assets/fonts/           self-hosted Inter and JetBrains Mono (SIL OFL)
 ├── quantum/                the simulator, the oracle and Deutsch–Jozsa — imports nothing from the game
 ├── utils/                  small pure helpers
 └── story/ data/ audio/     reserved for later checkpoints
 tests/
-├── game/                   tokens, display maths, paper grain
+├── game/                   tokens, display maths, paper grain, the game Oracle, input model, player-facing text
 ├── quantum/                complex numbers, states, gates, measurement, oracle, Deutsch–Jozsa, independence
 └── utils/                  colour, formatting, seeded random
 ```
@@ -243,7 +246,7 @@ The Checkpoint 02 engine could only apply single-qubit gates and measure every q
 
 ### Tests
 
-`tests/quantum/` now holds 337 tests; the whole project has 398. The Checkpoint 03 additions:
+`tests/quantum/` holds 337 tests; at Checkpoint 03 the whole project had 398. The Checkpoint 03 additions:
 
 - **Boolean functions** — every factory, validation, and the counts of constant, balanced and other functions for 1 to 3 bits (2/2/0, 2/6/8, 2/70/184).
 - **Oracle** — U_f on every basis state of all 256 three-bit functions; self-inverse, norm-preserving and linear; phase kickback with the ancilla in |−⟩, no effect with it in |+⟩; query counting; nothing about f can be read from it.
@@ -253,6 +256,67 @@ The Checkpoint 02 engine could only apply single-qubit gates and measure every q
 
 Eighteen deliberate bugs were introduced one at a time (an oracle flipping the wrong bit, an unprepared ancilla, an inverted or hardcoded verdict, a double query, a missing promise check, and others); the tests caught every one.
 
+## Checkpoint 04 — First Playable Oracle Prototype
+
+The first version of the game that can be played. In the laboratory the player:
+
+1. sets a 6-bit binary input, by clicking bits or typing `0` and `1`;
+2. asks the machine, with the `ASK` control or `Enter`;
+3. watches the machine work for about a second;
+4. reads its one-bit answer in the machine's aperture;
+5. sees the exchange added to the experiment log, as `QUERY_001`, `QUERY_002`, …;
+6. changes the input and asks again.
+
+It is a prototype. There is nothing to solve or submit yet, no level progression, and no quantum mode.
+
+### Two different oracles
+
+| | Game Oracle | Quantum oracle |
+| --- | --- | --- |
+| Where | `src/game/systems/oracle/GameOracle.ts` | `src/quantum/oracle.ts` |
+| What it is | The machine the player operates | A unitary operation on a state vector |
+| How it is asked | One binary string at a time | Once, on a superposition |
+| Used by | The laboratory, now | A later quantum mode |
+
+Both are built from the same kind of `BooleanFunction`, so the function a player probes by hand is one the quantum algorithm can later be run against. Nothing was duplicated, and the quantum engine was not changed.
+
+### The game Oracle
+
+`GameOracle` accepts a binary string, checks that it is the right length and contains only `0` and `1`, evaluates the hidden function, records the query and returns it. It exposes the history and the number of queries — and nothing about the function, which is held in a runtime-private field.
+
+The prototype's function is fixed (`createPrototypeOracle()` in `prototypeOracle.ts`), not random, so every session behaves the same and a bug can be reproduced. Replacing that one function changes the machine without touching the interface.
+
+### What the player sees
+
+Nothing in the interface names a concept the player has not met. The words *constant*, *balanced*, *quantum*, *superposition*, *phase*, *Hadamard* and *Deutsch–Jozsa* appear nowhere the player can read, and a test scans every string in the game layer to keep it that way.
+
+| Control | Mouse | Keyboard |
+| --- | --- | --- |
+| Set a bit | Click it | `0` / `1` types at the cursor; `Space` flips the focused bit |
+| Move the cursor | Click a bit | `←` `→`, or `Tab` between bits |
+| Undo a digit | — | `Backspace` |
+| Ask the machine | `ASK` | `Enter` |
+| Leave | `RETURN` | `Esc` |
+
+While the machine is working, the input and `ASK` are unavailable and the status reads `PROCESSING`. They stay focusable, so a keyboard user is not thrown out of the control they just pressed.
+
+### Two engineering notes
+
+- **Key presses come from the browser, not from Phaser.** Phaser's keyboard plugin re-emits earlier presses when several key events fall within one frame, which entered a digit more than once at low frame rates. `systems/keyboard.ts` listens to `keydown` directly: one press, one event.
+- **The machine answers on real time.** Phaser's clock slows down when frames are scarce, so a one-second wait could take a minute in a throttled browser. The answer is scheduled with a real timer (`StageScene.afterDelay`); only the animation is frame-driven.
+
+### Tests
+
+80 new tests, 478 in the project:
+
+- **Game Oracle** — answers match the hidden function on every input; length and character validation; the record of queries and its immutability; nothing about the function is exposed.
+- **Input model** — typing, erasing, toggling and cursor movement, including the edges.
+- **Prototype machine** — identical behaviour in every session, pinned to a fingerprint of all 64 answers.
+- **Keyboard filter** — handled presses and browser shortcuts are left alone.
+- **Player-facing text** — no unrevealed term in any string of the game layer or the page.
+
+The interface itself was exercised in a browser: typing, clicking, focus order, the processing lock, 30 queries in a row, both ways out, and the layout from 900px to 1920px wide.
+
 ## Known limits
 
 - **Desktop only.** Below a 900px-wide viewport the game is replaced by a notice.
@@ -260,6 +324,8 @@ Eighteen deliberate bugs were introduced one at a time (an oracle flipping the w
 - **Bundle size.** Phaser is included whole (about 320 kB gzipped). A trimmed custom Phaser build is a later optimisation.
 - **Quantum engine scope.** Multi-qubit operations are limited to permutations of basis states, which is all an oracle needs; there is no general multi-qubit gate (an arbitrary controlled rotation, say).
 - **Simulating the oracle is not free.** Building U_f evaluates f on all 2ⁿ inputs, because a simulator must know the whole unitary. That is the cost of simulating a quantum computer on a classical one; the algorithm itself still makes a single query.
+- **Prototype scope.** The machine has one fixed hidden rule and the laboratory has no goal to reach. The experiment log is not saved: leaving the laboratory clears it.
+- **Log scrolling.** The log draws no scrollbar. It follows its newest entry by itself; older entries are reached with the wheel, a trackpad, or the arrow keys once it has focus.
 - **Deterministic by nature.** Under the promise, Deutsch–Jozsa is never wrong, so repeated runs on the same function always agree on the verdict. For some balanced functions the measured bit string varies between runs; it is just never all zeros.
 
 ## Licences

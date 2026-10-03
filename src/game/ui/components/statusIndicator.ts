@@ -11,3 +11,11 @@ export function createStatusIndicator(label: string): HTMLParagraphElement {
     createElement('span', { className: 'status__label', text: label }),
   ]);
 }
+
+/** Changes the label of an existing indicator, e.g. from "ONLINE" to "PROCESSING". */
+export function setStatusLabel(indicator: HTMLElement, label: string): void {
+  const labelElement = indicator.querySelector('.status__label');
+  if (labelElement) {
+    labelElement.textContent = label;
+  }
+}
