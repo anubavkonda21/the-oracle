@@ -1,0 +1,68 @@
+/*
+ * Design tokens — the CSS half of the design system.
+ *
+ * Colours, font stacks and motion timings are mirrored in
+ * src/game/config/designTokens.ts for canvas code. A unit test
+ * (tests/game/designTokens.test.ts) fails if the two files disagree, so
+ * change both together. Nothing outside this file should contain a raw
+ * colour, font name or duration.
+ */
+:root {
+  /* Classical palette — the whole early game lives in these. */
+  --color-background: #F1EFE9;
+  --color-text-primary: #111111;
+  --color-text-secondary: #6F6D67;
+  --color-border: #D2CEC5;
+  --color-surface: #E9E6DF;
+  --color-machine-black: #171717;
+
+  /* Uncertainty — warnings, Oracle activity, measurement, anomalies. Use sparingly. */
+  --color-signal-red: #B3262E;
+
+  /* Quantum — reserved. Intentionally unused until Quantum Mode is introduced. */
+  --color-quantum-indigo: #5146A8;
+
+  /* Two voices: a human one for language, a machine one for data. */
+  --font-human: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-machine: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /*
+   * Stage unit: the on-screen size of one design pixel of the 1440 × 900
+   * frame. It is the same uniform scale Phaser applies to the canvas, so
+   * interface and canvas always grow and shrink together.
+   */
+  --u: min(100vw / 1440, 100vh / 900);
+
+  /* Type scale. Small sizes have a floor so they stay legible on small windows. */
+  --type-micro: max(11px, calc(12 * var(--u)));
+  --type-small: max(12px, calc(14 * var(--u)));
+  --type-body: max(14px, calc(16 * var(--u)));
+  --type-lead: max(15px, calc(19 * var(--u)));
+  --tracking-machine: 0.12em;
+  --tracking-control: 0.2em;
+
+  /* Distance kept between the interface and the edges of the window. */
+  --edge-x: calc(48 * var(--u));
+  --edge-y: calc(36 * var(--u));
+
+  /* Lighting on the paper background: a soft bright centre, a faint darkening at the edges. */
+  --paper-light: color-mix(in srgb, white 32%, transparent);
+  --paper-shade: color-mix(in srgb, var(--color-text-primary) 3%, transparent);
+
+  --radius: 3px;
+  --hairline: 1px;
+  --shadow-panel:
+    0 1px 0 color-mix(in srgb, var(--color-text-primary) 5%, transparent),
+    0 10px 24px -18px color-mix(in srgb, var(--color-text-primary) 35%, transparent);
+
+  --motion-control: 180ms;
+  --motion-scene-fade: 240ms;
+  --ease-precise: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-control: 0ms;
+    --motion-scene-fade: 0ms;
+  }
+}

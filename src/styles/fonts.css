@@ -1,0 +1,20 @@
+/*
+ * Self-hosted variable fonts (Latin subset), both under the SIL Open Font
+ * License — see src/assets/fonts/LICENSE-*.txt. No font is fetched from a
+ * third-party server. PreloadScene waits for these before the first screen.
+ */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../assets/fonts/inter-latin-wght-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('../assets/fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2');
+}

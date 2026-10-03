@@ -1,0 +1,125 @@
+/*
+ * The shell: the page around and behind the game. It owns the paper
+ * background, stacks the canvas and the interface, and handles the states in
+ * which the game itself is not on screen (starting up, window too narrow,
+ * no JavaScript).
+ */
+
+/* ---------- Paper ---------- */
+
+.shell {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--color-background);
+  /* Grain tile generated once at start-up by effects/paperGrain.ts. */
+  background-image: var(--paper-grain, none);
+  background-size: var(--paper-grain-size, auto);
+}
+
+/* Even light on the middle of the sheet, falling off slightly toward the edges. */
+.shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 62% at 50% 44%, var(--paper-light), transparent 74%),
+    radial-gradient(ellipse 110% 100% at 50% 50%, transparent 56%, var(--paper-shade) 100%);
+}
+
+/* ---------- Stage: canvas below, interface above ---------- */
+
+.stage {
+  position: absolute;
+  inset: 0;
+  opacity: 1;
+  transition: opacity var(--motion-scene-fade) ease;
+}
+
+/* Toggled by effects/StageFade.ts during scene transitions. */
+.stage[data-visibility='hidden'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stage__canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.stage__canvas canvas {
+  display: block;
+}
+
+/* The interface never blocks the canvas; only its controls take pointer input. */
+.stage__ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.stage__ui button {
+  pointer-events: auto;
+}
+
+/* ---------- Start-up readout ---------- */
+
+/* Appears only if start-up takes long enough to notice, and is retired by ui/shell.ts. */
+.boot-status {
+  position: absolute;
+  right: var(--edge-x);
+  bottom: var(--edge-y);
+  opacity: 0;
+  animation: boot-status-appear 0s linear 600ms forwards;
+}
+
+@keyframes boot-status-appear {
+  to {
+    opacity: 1;
+  }
+}
+
+:root[data-boot='ready'] .boot-status {
+  display: none;
+}
+
+/* ---------- Desktop-only notice ---------- */
+
+.desktop-notice,
+.noscript-notice {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  text-align: center;
+  line-height: 1.9;
+  white-space: normal;
+}
+
+.desktop-notice {
+  display: none;
+}
+
+.desktop-notice .readout {
+  max-width: 30ch;
+  color: inherit;
+  font-size: 12px;
+  line-height: inherit;
+  white-space: normal;
+}
+
+/* Breakpoint mirrors MIN_VIEWPORT_WIDTH in src/game/config/display.ts (checked by a unit test). */
+@media (max-width: 899px) {
+  .shell {
+    visibility: hidden;
+  }
+
+  .desktop-notice {
+    display: grid;
+  }
+}

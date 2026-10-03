@@ -1,0 +1,23 @@
+{
+  "name": "the-oracle",
+  "private": true,
+  "version": "0.1.0",
+  "description": "THE ORACLE — a browser mystery game that teaches the Deutsch–Jozsa algorithm through play.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  }
+}

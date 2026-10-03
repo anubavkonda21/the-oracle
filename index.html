@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="THE ORACLE — you don't need to know what's inside. You only need to know how to ask."
+    />
+    <meta name="theme-color" content="#F1EFE9" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <title>THE ORACLE</title>
+  </head>
+  <body>
+    <div id="app" class="shell">
+      <!-- Canvas and interface share one wrapper so scene transitions fade them together. -->
+      <div id="stage" class="stage" data-visibility="hidden">
+        <div id="stage-canvas" class="stage__canvas" aria-hidden="true"></div>
+        <main id="stage-ui" class="stage__ui"></main>
+      </div>
+      <p class="boot-status readout" role="status">SYSTEM: INITIALIZING</p>
+    </div>
+
+    <!-- Replaces the game on viewports narrower than 900px (see shell.css). -->
+    <section class="desktop-notice" aria-label="Unsupported screen size">
+      <p class="readout">THE ORACLE IS DESIGNED FOR A DESKTOP EXPERIMENT.</p>
+    </section>
+
+    <noscript>
+      <p class="noscript-notice readout">THE ORACLE REQUIRES JAVASCRIPT.</p>
+    </noscript>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

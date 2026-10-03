@@ -1,0 +1,169 @@
+/*
+ * Reusable interface components. Each has a matching builder in
+ * src/game/ui/components/ (or is a plain class, like .readout).
+ */
+
+/* ---------- Readout: a single line in the machine's voice ---------- */
+
+.readout,
+.status {
+  font-family: var(--font-machine);
+  font-size: var(--type-micro);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: var(--tracking-machine);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* ---------- Status indicator: signal dot + label ---------- */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8em;
+}
+
+.status__dot {
+  flex: none;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: var(--color-signal-red);
+}
+
+/* ---------- Control: the game's button ---------- */
+
+.control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1em;
+  min-height: max(36px, calc(42 * var(--u)));
+  padding: 0 max(24px, calc(30 * var(--u)));
+  border: var(--hairline) solid var(--color-text-primary);
+  border-radius: var(--radius);
+  background-color: transparent;
+  color: var(--color-text-primary);
+  font-family: var(--font-machine);
+  font-size: var(--type-micro);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: var(--tracking-control);
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-control) var(--ease-precise),
+    border-color var(--motion-control) var(--ease-precise),
+    color var(--motion-control) var(--ease-precise),
+    transform var(--motion-control) var(--ease-precise);
+}
+
+/* Signal indicator: a small red dot that arrives when the control is engaged. */
+.control::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: max(10px, calc(13 * var(--u)));
+  width: 4px;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 50%;
+  background: var(--color-signal-red);
+  opacity: 0;
+  transform: translateX(-3px);
+  transition:
+    opacity var(--motion-control) var(--ease-precise),
+    transform var(--motion-control) var(--ease-precise);
+}
+
+/* Letter-spacing leaves a gap after the last letter; pull it back so the label is truly centred. */
+.control__label {
+  margin-right: calc(-1 * var(--tracking-control));
+}
+
+.control__shortcut {
+  padding-left: 1.1em;
+  border-left: var(--hairline) solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  letter-spacing: var(--tracking-machine);
+}
+
+.control--quiet {
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.control:not(:disabled):hover,
+.control:not(:disabled):focus-visible {
+  border-color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
+}
+
+.control:not(:disabled):hover::before,
+.control:not(:disabled):focus-visible::before {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.control:not(:disabled):active {
+  background-color: var(--color-border);
+  transform: translateY(0);
+  transition-duration: 60ms;
+}
+
+.control:disabled {
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control:not(:disabled):hover,
+  .control:not(:disabled):focus-visible,
+  .control::before {
+    transform: none;
+  }
+}
+
+/* ---------- Panel: a titled, bordered surface ---------- */
+
+.panel {
+  min-width: max(208px, calc(256 * var(--u)));
+  padding: calc(15 * var(--u)) calc(18 * var(--u)) calc(16 * var(--u));
+  border: var(--hairline) solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-panel);
+}
+
+/*
+ * Primary rather than secondary text: warm grey on the darker panel surface
+ * falls below a 4.5:1 contrast ratio. The machine typeface marks it as a label.
+ */
+.panel__heading {
+  margin-bottom: calc(10 * var(--u));
+  font-family: var(--font-machine);
+  font-size: var(--type-micro);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: var(--tracking-machine);
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+}
+
+.panel__text {
+  font-size: var(--type-body);
+  line-height: 1.35;
+}
+
+.panel .status {
+  color: var(--color-text-primary);
+}
