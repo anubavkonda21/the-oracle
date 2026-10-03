@@ -4,6 +4,7 @@ export const SCENE_KEYS = {
   preload: 'Preload',
   mainMenu: 'MainMenu',
   laboratory: 'Laboratory',
+  box: 'Box',
 } as const;
 
 export type SceneKey = (typeof SCENE_KEYS)[keyof typeof SCENE_KEYS];

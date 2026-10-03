@@ -19,6 +19,12 @@ import { createPrototypeOracle } from '../systems/oracle/prototypeOracle';
 import { createLaboratoryView, type LaboratoryView } from '../ui/views/laboratoryView';
 import { StageScene } from './StageScene';
 
+/** What another scene can hand the laboratory when it starts it. */
+interface LaboratoryEntry {
+  /** Continue the experiment that was under way, rather than starting a new one. */
+  resume?: boolean;
+}
+
 /**
  * The laboratory: the first playable loop. The player composes a binary
  * input, asks the machine, watches it work, and reads its one-bit answer,
@@ -37,15 +43,22 @@ export class LaboratoryScene extends StageScene {
   private view!: LaboratoryView;
   private binaryInput!: BinaryInputState;
   private isProcessing = false;
+  /** False until the laboratory has been entered once, after which there is an experiment to resume. */
+  private hasExperiment = false;
 
   constructor() {
     super(SCENE_KEYS.laboratory);
   }
 
-  create(): void {
-    // A fresh machine each time the laboratory is entered: an empty log and the same fixed behaviour.
-    this.oracle = createPrototypeOracle();
-    this.binaryInput = createBinaryInput(this.oracle.inputLength);
+  create(entry?: LaboratoryEntry): void {
+    // Coming back from THE BOX, the machine, its log and the input are as they were left.
+    // Coming from the main menu, everything starts fresh: an empty log and the same fixed behaviour.
+    const resuming = entry?.resume === true && this.hasExperiment;
+    if (!resuming) {
+      this.oracle = createPrototypeOracle();
+      this.binaryInput = createBinaryInput(this.oracle.inputLength);
+    }
+    this.hasExperiment = true;
     this.isProcessing = false;
 
     this.view = createLaboratoryView({
@@ -56,19 +69,31 @@ export class LaboratoryScene extends StageScene {
       onFocusBit: (index) => this.placeCursor(setCursor(this.binaryInput, index)),
       onAsk: () => this.ask(),
       onReturn: () => this.returnToMenu(),
+      boxObserved: this.session.hasObservedBox,
+      onOpenBox: () => this.openBox(),
     });
     this.enterStage(this.view.element);
     this.view.renderInput(this.binaryInput);
 
     this.machine = new OracleMachine(this, DESIGN_WIDTH / 2, MACHINE_CENTER_Y);
 
+    // The view and the machine are rebuilt on every entry, so a resumed experiment is drawn back into them.
+    const history = this.oracle.history;
+    for (const query of history) {
+      this.view.recordQuery(query);
+    }
+    const lastQuery = history[history.length - 1];
+    if (lastQuery) {
+      this.machine.showAnswer(lastQuery.output, false);
+    }
+
     listenForKeyPresses(this, (event) => this.handleKey(event));
   }
 
   private handleKey(event: KeyboardEvent): void {
-    // Holding a digit down fills in bits, as it would in any text field. Holding Enter or Escape
+    // Holding a digit down fills in bits, as it would in any text field. Holding any other key
     // must not act again and again — least of all an Enter still held from the main menu.
-    if (event.repeat && (event.key === 'Enter' || event.key === 'Escape')) {
+    if (event.repeat && event.key !== '0' && event.key !== '1' && event.key !== 'Backspace') {
       return;
     }
 
@@ -97,6 +122,10 @@ export class LaboratoryScene extends StageScene {
         break;
       case 'Escape':
         this.returnToMenu();
+        break;
+      case 'b':
+      case 'B':
+        this.openBox();
         break;
     }
   }
@@ -148,5 +177,9 @@ export class LaboratoryScene extends StageScene {
 
   private returnToMenu(): void {
     this.leaveTo(SCENE_KEYS.mainMenu);
+  }
+
+  private openBox(): void {
+    this.leaveTo(SCENE_KEYS.box);
   }
 }

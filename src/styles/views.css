@@ -155,6 +155,11 @@
   justify-self: end;
 }
 
+.laboratory__actions {
+  display: flex;
+  gap: calc(12 * var(--u));
+}
+
 /*
  * The input console sits directly beneath the machine. The stage is always
  * centred in the window, so "50%" is the middle of the design frame and the

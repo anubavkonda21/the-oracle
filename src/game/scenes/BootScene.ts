@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { SCENE_KEYS } from '../config/sceneKeys';
+import { StageEnvironment } from '../effects/StageEnvironment';
 import { StageFade } from '../effects/StageFade';
+import { GameSession } from '../systems/GameSession';
 import { installDesktopGate } from '../systems/desktopGate';
 import { registerServices } from '../systems/services';
 import { UiLayer } from '../ui/UiLayer';
@@ -18,6 +20,8 @@ export class BootScene extends Phaser.Scene {
     registerServices(this.registry, {
       ui: new UiLayer(shell.uiRoot),
       stageFade: new StageFade(shell.stage),
+      stageEnvironment: new StageEnvironment(shell.stage),
+      session: new GameSession(),
     });
     installDesktopGate(this.game);
 

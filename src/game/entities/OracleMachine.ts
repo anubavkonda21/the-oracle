@@ -105,14 +105,19 @@ export class OracleMachine extends Phaser.GameObjects.Container {
     ];
   }
 
-  /** The machine answers: the digit appears in the aperture and the machine returns to standby. */
-  showAnswer(output: Bit): void {
+  /**
+   * The machine answers: the digit appears in the aperture and the machine
+   * returns to standby. With `animate` off the digit is simply there — used
+   * when the player comes back to a machine that had already answered.
+   */
+  showAnswer(output: Bit, animate = true): void {
     this.stopWorkingTweens();
+    this.standbyPulse?.remove();
     this.statusLight.setAlpha(1);
     this.startStandbyPulse();
 
     this.answer.setText(String(output));
-    if (prefersReducedMotion()) {
+    if (!animate || prefersReducedMotion()) {
       this.answer.setAlpha(1);
       return;
     }

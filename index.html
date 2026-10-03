@@ -14,7 +14,8 @@
   <body>
     <div id="app" class="shell">
       <!-- Canvas and interface share one wrapper so scene transitions fade them together. -->
-      <div id="stage" class="stage" data-visibility="hidden">
+      <div id="stage" class="stage" data-visibility="hidden" data-environment="paper">
+        <div class="stage__backdrop" aria-hidden="true"></div>
         <div id="stage-canvas" class="stage__canvas" aria-hidden="true"></div>
         <main id="stage-ui" class="stage__ui"></main>
       </div>

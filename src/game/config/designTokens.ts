@@ -11,6 +11,9 @@ import { hexToNumber, hexToRgba } from '../../utils/color';
  *   classical   → background / text / border / surface
  *   uncertainty → signalRed (warnings, Oracle activity, measurement, anomalies)
  *   quantum     → quantumIndigo (reserved; unused until Quantum Mode exists)
+ *
+ * The `dark…` colours are a second, darker room — THE BOX. They replace the
+ * classical four inside the dark stage environment and are used nowhere else.
  */
 export const COLORS = {
   background: '#F1EFE9',
@@ -21,6 +24,10 @@ export const COLORS = {
   machineBlack: '#171717',
   signalRed: '#B3262E',
   quantumIndigo: '#5146A8',
+  darkBackground: '#171717',
+  darkTextPrimary: '#F1EFE9',
+  darkTextSecondary: '#A8A59E',
+  darkBorder: '#5A5750',
 } as const;
 
 export type ColorToken = keyof typeof COLORS;

@@ -43,6 +43,37 @@
   pointer-events: none;
 }
 
+/*
+ * Environments. A scene chooses the room it takes place in (see
+ * effects/StageEnvironment.ts). The backdrop is INSIDE the stage, so it fades
+ * with everything else: entering the dark room, the paper dims to black
+ * rather than cutting to it.
+ */
+.stage__backdrop {
+  position: absolute;
+  inset: 0;
+}
+
+/*
+ * The dark room swaps the four classical colours for their dark counterparts.
+ * Every component inside the stage is written against those four, so they
+ * all change with it and none needs a dark variant of its own.
+ */
+.stage[data-environment='dark'] {
+  --color-background: var(--color-dark-background);
+  --color-text-primary: var(--color-dark-text-primary);
+  --color-text-secondary: var(--color-dark-text-secondary);
+  --color-border: var(--color-dark-border);
+  --color-surface: color-mix(in srgb, var(--color-dark-text-primary) 9%, var(--color-dark-background));
+  color: var(--color-text-primary);
+}
+
+.stage[data-environment='dark'] .stage__backdrop {
+  background:
+    radial-gradient(ellipse 46% 52% at 50% 36%, var(--dark-light), transparent 100%),
+    var(--color-dark-background);
+}
+
 .stage__canvas {
   position: absolute;
   inset: 0;

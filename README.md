@@ -7,12 +7,13 @@ A browser-playable mystery game for the Quriosity quantum game-development compe
 
 ## Status
 
-**Checkpoint 04 — first playable Oracle prototype.** The game can now be played in its simplest form: give the machine a 6-bit input, watch it work, read its one-bit answer, and see the exchange added to an experiment log. There is deliberately **no investigation to complete, no quantum mode, no quantum visuals and no story yet**; `src/story/`, `src/data/` and `src/audio/` are empty placeholders for later checkpoints.
+**Checkpoint 05 — The Box.** Beside the playable Oracle there is now a short detour, THE BOX: the player's first direct experience of a quantum measurement, made before any of it is explained. There is deliberately **no investigation to complete, no quantum mode for the Oracle, no story and no sound yet**; `src/story/`, `src/data/` and `src/audio/` are empty placeholders for later checkpoints.
 
 What exists today:
 
 - Main menu → `ENTER` → the laboratory → `ESC` / `RETURN` back to the menu
 - A playable loop in the laboratory: binary input → ask → processing → output → experiment log (see [Checkpoint 04](#checkpoint-04--first-playable-oracle-prototype))
+- THE BOX: a sealed box, one action — OBSERVE — and one definite outcome, measured on the real state-vector engine (see [Checkpoint 05](#checkpoint-05--the-box))
 - A design system (colour, type, motion tokens) shared by CSS and canvas code
 - A responsive 1440 × 900 stage that scales to the window and stays sharp on high-density screens
 - A standalone quantum state-vector simulator in `src/quantum/` (see [Checkpoint 02](#checkpoint-02--quantum-engine))
@@ -28,6 +29,7 @@ The game is built in numbered checkpoints, one commit each. Every checkpoint lea
 | [02 — Quantum Engine](#checkpoint-02--quantum-engine) | [`e305f67`](https://github.com/anubavkonda21/the-oracle/commit/e305f67a67f58e4e5bdf422589906e6fd1c97bb7) `feat: add quantum state-vector engine` | Complex numbers; n-qubit state vectors; I, X, Z and H gates on any qubit; probabilities; destructive measurement and non-destructive sampling. | 249 |
 | [03 — Quantum Oracle and Deutsch–Jozsa](#checkpoint-03--quantum-oracle-and-deutschjozsa) | [`0f3ae8d`](https://github.com/anubavkonda21/the-oracle/commit/0f3ae8d64611bc037f37ca670724fbc6a55501dc) `feat: add quantum oracle and Deutsch–Jozsa algorithm` | Boolean functions; the bit-flip oracle; the Deutsch–Jozsa algorithm; basis permutations and partial measurement on the state vector. | 398 |
 | [04 — First Playable Oracle Prototype](#checkpoint-04--first-playable-oracle-prototype) | [`cc1f928`](https://github.com/anubavkonda21/the-oracle/commit/cc1f928cd2fe551ff337c719010d6e1c6079c4eb) `feat: add first playable oracle prototype` | The game-level Oracle; the 6-bit input; the machine's processing and answer; the experiment log. | 478 |
+| [05 — The Box](#checkpoint-05--the-box) | _not yet committed_ | THE BOX scene; a single-qubit superposition measured by the engine; the dark room; session tracking; the way from the laboratory and back. | 532 |
 
 Still to come: the full investigation, quantum mode, quantum visuals, story and sound. Commits that only touch documentation are not listed here; the complete log is on the [commits page](https://github.com/anubavkonda21/the-oracle/commits/main).
 
@@ -67,19 +69,20 @@ src/
 ├── main.ts                 entry point
 ├── game/
 │   ├── config/             design tokens, display maths, scene keys, Phaser config
-│   ├── scenes/             Boot → Preload → MainMenu ⇄ Laboratory
-│   ├── entities/           things on the canvas (the machine)
-│   ├── systems/            shared services, keyboard, font loading, desktop gate
-│   │   └── oracle/         the machine's game logic: the Oracle, the input model, the prototype rule
+│   ├── scenes/             Boot → Preload → MainMenu ⇄ Laboratory ⇄ Box
+│   ├── entities/           things on the canvas (the machine, the box)
+│   ├── systems/            shared services, session, keyboard, font loading, desktop gate
+│   │   ├── oracle/         the machine's game logic: the Oracle, the input model, the prototype rule
+│   │   └── box/            THE BOX's logic: one qubit, prepared and measured on the quantum engine
 │   ├── ui/                 the HTML layer: components and per-scene views
-│   └── effects/            paper grain, scene fade, motion preference
-├── styles/                 tokens → fonts → base → shell → components → oracle → views
+│   └── effects/            paper grain, scene fade, stage environment, motion preference
+├── styles/                 tokens → fonts → base → shell → components → oracle → views → box
 ├── assets/fonts/           self-hosted Inter and JetBrains Mono (SIL OFL)
 ├── quantum/                the simulator, the oracle and Deutsch–Jozsa — imports nothing from the game
 ├── utils/                  small pure helpers
 └── story/ data/ audio/     reserved for later checkpoints
 tests/
-├── game/                   tokens, display maths, paper grain, the game Oracle, input model, player-facing text
+├── game/                   tokens, display maths, paper grain, the game Oracle, input model, THE BOX, session, player-facing text
 ├── quantum/                complex numbers, states, gates, measurement, oracle, Deutsch–Jozsa, independence
 └── utils/                  colour, formatting, seeded random
 ```
@@ -288,7 +291,7 @@ The prototype's function is fixed (`createPrototypeOracle()` in `prototypeOracle
 
 ### What the player sees
 
-Nothing in the interface names a concept the player has not met. The words *constant*, *balanced*, *quantum*, *superposition*, *phase*, *Hadamard* and *Deutsch–Jozsa* appear nowhere the player can read, and a test scans every string in the game layer to keep it that way.
+Nothing in the laboratory names a concept the player has not met. The words *constant*, *balanced*, *phase*, *Hadamard* and *Deutsch–Jozsa* appear nowhere the player can read, and *quantum* and *superposition* appear only in the short context of THE BOX (Checkpoint 05), after the player has observed. A test scans every string in the game layer to keep it that way.
 
 | Control | Mouse | Keyboard |
 | --- | --- | --- |
@@ -307,7 +310,7 @@ While the machine is working, the input and `ASK` are unavailable and the status
 
 ### Tests
 
-80 new tests, 478 in the project:
+80 new tests, 478 in the project at this checkpoint:
 
 - **Game Oracle** — answers match the hidden function on every input; length and character validation; the record of queries and its immutability; nothing about the function is exposed.
 - **Input model** — typing, erasing, toggling and cursor movement, including the edges.
@@ -317,6 +320,65 @@ While the machine is working, the input and `ASK` are unavailable and the status
 
 The interface itself was exercised in a browser: typing, clicking, focus order, the processing lock, 30 queries in a row, both ways out, and the layout from 900px to 1920px wide.
 
+## Checkpoint 05 — The Box
+
+THE BOX is an **experiential introduction**: something the player does and sees before anything is explained. It is **not the official competition problem statement**. The official problem remains the **Deutsch–Jozsa algorithm**, which the Oracle is building towards; THE BOX only prepares the intuition that observing a system changes what can be known about it.
+
+### The experience
+
+From the laboratory, `THE BOX` (or `B`) leads to a darker, quieter room with a single sealed box.
+
+1. The box is sealed. Nothing says what is inside or what will happen. There is one action: `OBSERVE`.
+2. On `OBSERVE`, everything is locked and the room holds still for a moment.
+3. The measurement happens, once.
+4. The shutter rises on one of two outcomes, pictured as the silhouette of a cat: `STILL` or `AWAKE`.
+5. Three sentences of context appear.
+6. `RETURN TO THE ORACLE` goes back to the laboratory, with the experiment log as it was left. `OBSERVE AGAIN` seals a new box.
+
+The whole sequence takes about half a minute. There is no lecture, quiz or question, and no explanation before the player acts.
+
+### Single-qubit superposition, measured for real
+
+`BoxExperiment` (`src/game/systems/box/`) holds one qubit of the Checkpoint 02 engine:
+
+```ts
+QuantumState.basis(1, 0).applyGate(Gates.H, 0);   // (|0⟩ + |1⟩)/√2
+```
+
+- **Before measurement** the state is that superposition, with amplitude 1/√2 on each outcome and a probability of exactly one half for each. It stays that way through the held moment after `OBSERVE` is pressed.
+- **The measurement** is the engine's own destructive `QuantumState.measure()`. The outcome is not drawn from `Math.random()` and attached to a picture; no file in the game layer calls `Math.random()` at all.
+- **After measurement** the state has collapsed to |0⟩ or |1⟩, and that is what the box shows.
+- **Replay** prepares a fresh superposition. Nothing is ordered or weighted: the first observation is not fixed, and one outcome does not influence the next.
+
+### The context shown afterwards
+
+> Before measurement, the system was described by a superposition of possible outcomes.
+> Measurement produced one definite result.
+> Schrödinger’s cat was a thought experiment, designed to expose the strange consequences of applying quantum ideas to everyday objects.
+
+The wording is deliberate. The system "was described by" a superposition: that is a statement about the description, not a claim that a cat was two things at once. The result is attributed to measurement, not to being looked at, and nothing suggests that a mind causes it. The cat is the picture; the thing measured is one qubit.
+
+It does not mention Hadamard gates, phase, the quantum oracle, Deutsch–Jozsa, or constant and balanced functions. Those come later.
+
+### How it fits the game
+
+- **A dark room.** Scenes now choose an environment. The dark one swaps the four classical colours for `#171717`, `#F1EFE9`, `#A8A59E` and `#5A5750`, so every existing component arrives dark without a variant of its own. There is no indigo yet.
+- **Session only.** `GameSession` remembers, in memory, whether THE BOX has been observed; the laboratory's control then reads `THE BOX | OBSERVED`. Nothing is written to storage.
+- **The laboratory resumes.** Returning from THE BOX keeps the machine, its log and the input. Returning from the main menu still starts a fresh experiment.
+- **No audio.** The project has no audio system yet, so no sound hooks were added.
+
+### Tests
+
+54 new tests, 532 in the project:
+
+- **The state before measurement** — amplitudes 1/√2 each, probabilities one half each, identical to the engine's `H|0⟩`, unchanged through the hold and by inspection.
+- **Observation** — produces a measurement, collapses the state onto a valid basis state, and can only happen once per observation.
+- **One at a time** — a second request during or after an observation is refused.
+- **Replay** — both outcomes occur, about half the time each over 20,000 observations, with no influence from the previous outcome.
+- **Provenance** — the outcome follows the engine's sampling for the same random draws; `BoxExperiment` never calls `Math.random()`.
+- **Leaving and returning** — a box abandoned mid-observation is sealed and fair on re-entry; the Oracle's record is untouched; the laboratory resumes only when THE BOX asks it to.
+- **The text** — nothing is explained before the player acts, and the context makes none of the claims it must not make.
+
 ## Known limits
 
 - **Desktop only.** Below a 900px-wide viewport the game is replaced by a notice.
@@ -324,7 +386,9 @@ The interface itself was exercised in a browser: typing, clicking, focus order, 
 - **Bundle size.** Phaser is included whole (about 320 kB gzipped). A trimmed custom Phaser build is a later optimisation.
 - **Quantum engine scope.** Multi-qubit operations are limited to permutations of basis states, which is all an oracle needs; there is no general multi-qubit gate (an arbitrary controlled rotation, say).
 - **Simulating the oracle is not free.** Building U_f evaluates f on all 2ⁿ inputs, because a simulator must know the whole unitary. That is the cost of simulating a quantum computer on a classical one; the algorithm itself still makes a single query.
-- **Prototype scope.** The machine has one fixed hidden rule and the laboratory has no goal to reach. The experiment log is not saved: leaving the laboratory clears it.
+- **Prototype scope.** The machine has one fixed hidden rule and the laboratory has no goal to reach. The experiment log is not saved: it survives a visit to THE BOX, but returning to the main menu clears it.
+- **Session only.** Whether THE BOX has been observed is remembered until the page is reloaded, and no longer.
+- **No sound.** There is no audio system yet.
 - **Log scrolling.** The log draws no scrollbar. It follows its newest entry by itself; older entries are reached with the wheel, a trackpad, or the arrow keys once it has focus.
 - **Deterministic by nature.** Under the promise, Deutsch–Jozsa is never wrong, so repeated runs on the same function always agree on the verdict. For some balanced functions the measured bit string varies between runs; it is just never all zeros.
 

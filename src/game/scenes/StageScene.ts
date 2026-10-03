@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from '../config/display';
 import type { SceneKey } from '../config/sceneKeys';
+import type { Environment } from '../effects/StageEnvironment';
+import type { GameSession } from '../systems/GameSession';
 import { getServices } from '../systems/services';
 
 /**
@@ -18,15 +20,24 @@ export abstract class StageScene extends Phaser.Scene {
     return this.isLeaving;
   }
 
-  /** Call at the start of `create()`: frames the camera, shows this scene's interface and fades the stage in. */
-  protected enterStage(view: HTMLElement): void {
+  /** What the player has done so far in this session. */
+  protected get session(): GameSession {
+    return getServices(this.registry).session;
+  }
+
+  /**
+   * Call at the start of `create()`: frames the camera, shows this scene's
+   * interface in the room it belongs to, and fades the stage in.
+   */
+  protected enterStage(view: HTMLElement, environment: Environment = 'paper'): void {
     this.isLeaving = false;
 
     // The canvas is `renderResolution` times larger than the design frame; zooming by the same factor cancels it out.
     const renderResolution = this.scale.width / DESIGN_WIDTH;
     this.cameras.main.setZoom(renderResolution).centerOn(DESIGN_WIDTH / 2, DESIGN_HEIGHT / 2);
 
-    const { ui, stageFade } = getServices(this.registry);
+    const { ui, stageFade, stageEnvironment } = getServices(this.registry);
+    stageEnvironment.set(environment); // The stage is faded out at this point, so the room changes unseen.
     ui.show(view);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => ui.clear());
     stageFade.fadeIn();
@@ -50,14 +61,19 @@ export abstract class StageScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, cancel);
   }
 
-  /** Fades the stage out, then starts another scene. Repeat calls while already leaving are ignored. */
-  protected leaveTo(sceneKey: SceneKey): void {
+  /**
+   * Fades the stage out, then starts another scene, optionally handing it
+   * data (received by that scene's `create`). Repeat calls while already
+   * leaving are ignored.
+   */
+  protected leaveTo(sceneKey: SceneKey, data?: object): void {
     if (this.isLeaving) {
       return;
     }
     this.isLeaving = true;
 
     const { stageFade } = getServices(this.registry);
-    void stageFade.fadeOut().then(() => this.scene.start(sceneKey));
+    // Phaser re-uses a scene's previous start data when none is given, so "nothing" has to be said explicitly.
+    void stageFade.fadeOut().then(() => this.scene.start(sceneKey, data ?? {}));
   }
 }

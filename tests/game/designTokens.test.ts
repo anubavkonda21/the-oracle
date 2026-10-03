@@ -111,4 +111,31 @@ describe('design tokens: text contrast (WCAG AA is 4.5:1)', () => {
   it('secondary text does not meet AA on panel surfaces, which is why panels use primary text', () => {
     expect(contrastRatio(COLORS.textSecondary, COLORS.surface)).toBeLessThan(4.5);
   });
+
+  it('both text colours of the dark room are clearly legible on its background', () => {
+    expect(contrastRatio(COLORS.darkTextPrimary, COLORS.darkBackground)).toBeGreaterThan(7);
+    expect(contrastRatio(COLORS.darkTextSecondary, COLORS.darkBackground)).toBeGreaterThan(7);
+  });
+
+  it('the signal red stays visible as a mark on the dark background, where it is never used for text', () => {
+    expect(contrastRatio(COLORS.signalRed, COLORS.darkBackground)).toBeGreaterThan(2);
+  });
+});
+
+describe('design tokens: the dark room', () => {
+  it('uses the palette specified for THE BOX', () => {
+    expect(COLORS.darkBackground).toBe('#171717');
+    expect(COLORS.darkTextPrimary).toBe('#F1EFE9');
+    expect(COLORS.darkTextSecondary).toBe('#A8A59E');
+    expect(COLORS.darkBorder).toBe('#5A5750');
+  });
+
+  it('introduces no indigo: the dark environment only remaps the classical colours', () => {
+    const darkBlock = /\.stage\[data-environment='dark'\]\s*\{([^}]*)\}/.exec(shellCss)?.[1] ?? '';
+    expect(darkBlock).toContain('--color-background: var(--color-dark-background)');
+    expect(darkBlock).toContain('--color-text-primary: var(--color-dark-text-primary)');
+    expect(darkBlock).toContain('--color-text-secondary: var(--color-dark-text-secondary)');
+    expect(darkBlock).toContain('--color-border: var(--color-dark-border)');
+    expect(shellCss).not.toMatch(/quantum-indigo/);
+  });
 });

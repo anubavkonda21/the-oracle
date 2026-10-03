@@ -20,6 +20,9 @@ export interface LaboratoryViewOptions {
   onFocusBit: (index: number) => void;
   onAsk: () => void;
   onReturn: () => void;
+  /** Whether the player has already observed THE BOX in this session. */
+  boxObserved: boolean;
+  onOpenBox: () => void;
 }
 
 export interface LaboratoryView {
@@ -43,7 +46,7 @@ export interface LaboratoryView {
  * machine itself is drawn.
  */
 export function createLaboratoryView(options: LaboratoryViewOptions): LaboratoryView {
-  const { levelNumber, objective, inputLength, onToggleBit, onFocusBit, onAsk, onReturn } = options;
+  const { levelNumber, objective, inputLength, onToggleBit, onFocusBit, onAsk, onReturn, boxObserved, onOpenBox } = options;
   const titleId = uniqueId('laboratory-title');
   const inputLabelId = uniqueId('input-label');
   const { title } = GAME_IDENTITY;
@@ -93,12 +96,21 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
       heading: 'OBJECTIVE',
       content: [createElement('p', { className: 'panel__text', text: objective })],
     }),
-    createControlButton({
-      label: 'RETURN',
-      variant: 'quiet',
-      onActivate: onReturn,
-      shortcut: { label: 'ESC', ariaKey: 'Escape' },
-    }),
+    createElement('div', { className: 'laboratory__actions' }, [
+      // The other apparatus in the facility. Once it has been observed, the control says so in place of its key hint.
+      createControlButton({
+        label: 'THE BOX',
+        variant: 'quiet',
+        onActivate: onOpenBox,
+        shortcut: { label: boxObserved ? 'OBSERVED' : 'B', ariaKey: 'B' },
+      }),
+      createControlButton({
+        label: 'RETURN',
+        variant: 'quiet',
+        onActivate: onReturn,
+        shortcut: { label: 'ESC', ariaKey: 'Escape' },
+      }),
+    ]),
     createPanel({ heading: 'SYSTEM STATUS', content: [systemStatus] }),
   ]);
 

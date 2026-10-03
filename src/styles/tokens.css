@@ -22,6 +22,15 @@
   /* Quantum — reserved. Intentionally unused until Quantum Mode is introduced. */
   --color-quantum-indigo: #5146A8;
 
+  /*
+   * The dark room — THE BOX. These take the place of the classical palette
+   * inside the dark stage environment (see shell.css) and are used nowhere else.
+   */
+  --color-dark-background: #171717;
+  --color-dark-text-primary: #F1EFE9;
+  --color-dark-text-secondary: #A8A59E;
+  --color-dark-border: #5A5750;
+
   /* Two voices: a human one for language, a machine one for data. */
   --font-human: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --font-machine: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
@@ -48,6 +57,9 @@
   /* Lighting on the paper background: a soft bright centre, a faint darkening at the edges. */
   --paper-light: color-mix(in srgb, white 32%, transparent);
   --paper-shade: color-mix(in srgb, var(--color-text-primary) 3%, transparent);
+
+  /* Lighting in the dark room: one faint pool of light on whatever stands in the middle. */
+  --dark-light: color-mix(in srgb, white 4.5%, transparent);
 
   --radius: 3px;
   --hairline: 1px;
