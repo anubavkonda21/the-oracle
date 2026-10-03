@@ -7,7 +7,7 @@ A browser-playable mystery game for the Quriosity quantum game-development compe
 
 ## Status
 
-**Checkpoint 02 — quantum engine.** The foundation and the quantum state-vector engine are in place. There is deliberately **no Oracle, no Deutsch–Jozsa and no gameplay yet**, and the game does not use the engine yet; `src/story/`, `src/data/` and `src/audio/` are empty placeholders for later checkpoints.
+**Checkpoint 03 — quantum Oracle and Deutsch–Jozsa.** The foundation, the quantum state-vector engine and the Deutsch–Jozsa algorithm are in place. There is deliberately **no gameplay, no quantum visuals and no story yet**, and the game does not use the engine yet; `src/story/`, `src/data/` and `src/audio/` are empty placeholders for later checkpoints.
 
 What exists today:
 
@@ -15,6 +15,7 @@ What exists today:
 - A design system (colour, type, motion tokens) shared by CSS and canvas code
 - A responsive 1440 × 900 stage that scales to the window and stays sharp on high-density screens
 - A standalone quantum state-vector simulator in `src/quantum/` (see [Checkpoint 02](#checkpoint-02--quantum-engine))
+- Boolean functions, a quantum oracle and the Deutsch–Jozsa algorithm, run on that simulator (see [Checkpoint 03](#checkpoint-03--quantum-oracle-and-deutschjozsa))
 
 ## Stack
 
@@ -59,12 +60,12 @@ src/
 │   └── effects/            paper grain, scene fade, motion preference
 ├── styles/                 tokens → fonts → base → shell → components → views
 ├── assets/fonts/           self-hosted Inter and JetBrains Mono (SIL OFL)
-├── quantum/                the state-vector simulator — imports nothing from the game
+├── quantum/                the simulator, the oracle and Deutsch–Jozsa — imports nothing from the game
 ├── utils/                  small pure helpers
 └── story/ data/ audio/     reserved for later checkpoints
 tests/
 ├── game/                   tokens, display maths, paper grain
-├── quantum/                complex numbers, states, gates, measurement, independence
+├── quantum/                complex numbers, states, gates, measurement, oracle, Deutsch–Jozsa, independence
 └── utils/                  colour, formatting, seeded random
 ```
 
@@ -78,7 +79,7 @@ The palette is meant to progress with the game: off-white, black and warm grey f
 
 `src/quantum/` is a small, dependency-free state-vector simulator. It performs the real linear algebra: nothing about quantum behaviour is faked or hardcoded. It imports nothing from Phaser, the DOM or the game (a test enforces this), and the game does not call it yet.
 
-**Deutsch–Jozsa has NOT yet been implemented.** Neither has the Oracle, any Boolean function, or any gate acting on more than one qubit. Those belong to later checkpoints.
+This section describes the engine as built in Checkpoint 02, when Deutsch–Jozsa, the Oracle and Boolean functions had not yet been implemented. They were added in [Checkpoint 03](#checkpoint-03--quantum-oracle-and-deutschjozsa), below, together with two extensions to `QuantumState` that the algorithm needed.
 
 ```ts
 import { Gates, QuantumState, basisStateLabel } from './quantum';
@@ -122,7 +123,7 @@ Gates and measurement change a `QuantumState` in place and return it for chainin
 | 2 | `10` | 7 | `111` |
 | 3 | `11` | | |
 
-So `QuantumState.basis(2, 0).applyGate(Gates.H, 0)` is (|00⟩ + |10⟩)/√2. State creation, gate application, measurement results and labels all follow this one convention, and the Oracle and Deutsch–Jozsa must keep it.
+So `QuantumState.basis(2, 0).applyGate(Gates.H, 0)` is (|00⟩ + |10⟩)/√2. State creation, gate application, measurement results, labels, the Oracle and Deutsch–Jozsa all follow this one convention.
 
 ### Measurement and randomness
 
@@ -130,7 +131,7 @@ Both measurement methods take the probabilities from the amplitudes and draw fro
 
 ### Quantum unit tests
 
-`tests/quantum/` holds 188 tests of mathematical behaviour, not of mere existence:
+`tests/quantum/` tests mathematical behaviour, not mere existence. The engine itself is covered by:
 
 - **Complex numbers** — arithmetic identities, polar form, conjugates, tolerance.
 - **States** — every one- and two-qubit basis state, vector sizes, invalid dimensions, normalization, zero-norm handling.
@@ -139,12 +140,96 @@ Both measurement methods take the probabilities from the amplitudes and draw fro
 - **Measurement** — certain outcomes, sampled distributions using real randomness with wide margins, collapse, non-collapse, and the sampler's exact boundaries using an injected random source.
 - **Independence** — the engine imports nothing outside its folder and exports only its intended API.
 
+## Checkpoint 03 — Quantum Oracle and Deutsch–Jozsa
+
+Given a Boolean function f(x) → {0, 1} that is promised to be either **constant** (the same output for every input) or **balanced** (0 for exactly half the inputs, 1 for the rest), the engine decides which, by running the Deutsch–Jozsa circuit on the state-vector simulator. The verdict is read from the simulated measurement. It is never looked up from the function.
+
+Not implemented yet: gameplay, the classical investigation, quantum visuals, story and dialogue. The game still does not call the engine.
+
+```ts
+import { createOracle, createParityFunction, runDeutschJozsa } from './quantum';
+
+const f = createParityFunction(3, 0b101);   // balanced: parity of the first and last bit
+const result = runDeutschJozsa(createOracle(f));
+
+result.verdict;        // 'balanced'
+result.measuredLabel;  // '101'
+result.oracleQueries;  // 1
+```
+
+### Boolean functions — `booleanFunction.ts`
+
+A `BooleanFunction` is `{ inputQubitCount, evaluate(input) }`, where `input` is an n-bit integer whose leftmost bit belongs to qubit 0.
+
+| Factory | Gives |
+| --- | --- |
+| `createConstantFunction(n, value)` | A constant function. |
+| `createParityFunction(n, mask, invert?)` | A balanced function: the parity of the bits of x selected by a non-zero `mask`. |
+| `createRandomBalancedFunction(n, random?)` | A balanced function drawn uniformly from *all* balanced functions of n bits, not only parities. |
+| `createFunctionFromTruthTable(outputs)` | Any function at all, including ones that break the promise. |
+| `createBooleanFunction(n, rule)` | A function from an arbitrary rule. |
+
+`truthTable(f)` and `classifyByTruthTable(f)` are the **classical** brute-force route: 2ⁿ evaluations, returning `'constant'`, `'balanced'` or `'neither'`. They exist as ground truth to check the quantum answer against. The Deutsch–Jozsa code never calls them.
+
+### The oracle — `oracle.ts`
+
+`createOracle(f)` builds the standard bit-flip oracle on n + 1 qubits:
+
+> U_f |x⟩|y⟩ = |x⟩|y ⊕ f(x)⟩
+
+The input register |x⟩ is qubits 0 … n−1 and the ancilla |y⟩ is the last qubit, so |x⟩|y⟩ has basis index 2x + y. U_f only relabels basis states and undoes itself, so it is unitary for any f.
+
+The oracle is a black box. It exposes `applyTo(state)`, its size and a `queryCount`; the function's outputs are held in a runtime-private field and cannot be read back. Each `applyTo` is one query.
+
+### The algorithm — `deutschJozsa.ts`
+
+`runDeutschJozsa(oracle, random?)` is handed only the oracle, never the function. It performs these steps on a real state vector:
+
+1. Prepare |0…0⟩|0⟩.
+2. Hadamard every input qubit: an equal superposition of all 2ⁿ inputs.
+3. Put the ancilla in |−⟩ = (|0⟩ − |1⟩)/√2 with X then H.
+4. Apply the oracle **once**.
+5. Phase kickback: with the ancilla in |−⟩, flipping it when f(x) = 1 multiplies that term by −1. The ancilla is unchanged and each input's amplitude now carries the sign (−1)^f(x). Nothing in the code applies these signs; they are what the oracle does to this state.
+6. Hadamard every input qubit again. The amplitude of |0…0⟩ becomes (1/2ⁿ) Σₓ (−1)^f(x): ±1 if f is constant, 0 if f is balanced, because the signed terms either all agree or cancel exactly.
+7. Measure the input register only. The ancilla is not measured.
+8. All zeros → `'constant'`. Anything else → `'balanced'`.
+
+The algorithm does not evaluate f on every input and read off the answers: a measurement yields a single n-bit string. The oracle is applied once, to a superposition, and interference turns one global property of f into a certain measurement result. Classically, certainty can take 2ⁿ⁻¹ + 1 evaluations.
+
+The result carries `verdict`, `measuredInput`, `measuredLabel`, `inputProbabilities` (the distribution just before measuring), `oracleQueries` (counted by the oracle, not assumed) and `steps` — an independent copy of the state after each stage, for inspection and for later visualisation.
+
+**If the promise is broken** — f is neither constant nor balanced — all zeros is neither certain nor impossible and a verdict would be meaningless, so `runDeutschJozsa` throws. It detects this from the state vector, not by inspecting f.
+
+### Extensions to `QuantumState`
+
+The Checkpoint 02 engine could only apply single-qubit gates and measure every qubit at once. Two additions were needed; nothing existing changed.
+
+| Method | Purpose |
+| --- | --- |
+| `applyBasisPermutation(permutation)` | Sends each basis state \|i⟩ to \|π(i)⟩. This is how the oracle, an operation spanning all n + 1 qubits, is applied. A mapping that is not one-to-one is rejected, since it would not be unitary. |
+| `getMarginalProbabilities(qubits)` | The probabilities of each result of measuring only the listed qubits. |
+| `measureQubits(qubits, random?)` | Measures only the listed qubits; the rest keep their superposition and relative phases. **Destructive.** |
+
+### Tests
+
+`tests/quantum/` now holds 337 tests; the whole project has 398. The Checkpoint 03 additions:
+
+- **Boolean functions** — every factory, validation, and the counts of constant, balanced and other functions for 1 to 3 bits (2/2/0, 2/6/8, 2/70/184).
+- **Oracle** — U_f on every basis state of all 256 three-bit functions; self-inverse, norm-preserving and linear; phase kickback with the ancilla in |−⟩, no effect with it in |+⟩; query counting; nothing about f can be read from it.
+- **Deutsch–Jozsa** — checked against brute force on **every** promised function of 1 to 4 bits (4, 8, 72 and 12,872 functions); every parity function of 1 to 5 bits must measure exactly its own mask; random balanced functions up to 10 bits; the 15-bit maximum; each of the eight steps inspected on the recorded states; every promise-breaking function of 2 and 3 bits must be refused.
+- **Provenance of the verdict** — the algorithm makes exactly one query, never calls `evaluate`, ignores metadata attached to a function, works through a hand-written oracle, and its source file neither imports the Boolean-function module nor mentions `evaluate`.
+- **Basis permutations and partial measurement** — against the X gate and a controlled-NOT, on product and entangled states, with real randomness and with injected random sources.
+
+Eighteen deliberate bugs were introduced one at a time (an oracle flipping the wrong bit, an unprepared ancilla, an inverted or hardcoded verdict, a double query, a missing promise check, and others); the tests caught every one.
+
 ## Known limits
 
 - **Desktop only.** Below a 900px-wide viewport the game is replaced by a notice.
 - **Secondary text contrast.** Warm grey `#6F6D67` on the background `#F1EFE9` measures 4.4992:1 — effectively the 4.5:1 WCAG AA threshold, but a hair under it. It is used only on the plain background, never on the darker panel surface.
 - **Bundle size.** Phaser is included whole (about 320 kB gzipped). A trimmed custom Phaser build is a later optimisation.
-- **Quantum engine scope.** Only single-qubit gates exist, and measurement always measures every qubit. The Oracle will need an operation that acts on several qubits at once; measuring only some qubits is not supported yet.
+- **Quantum engine scope.** Multi-qubit operations are limited to permutations of basis states, which is all an oracle needs; there is no general multi-qubit gate (an arbitrary controlled rotation, say).
+- **Simulating the oracle is not free.** Building U_f evaluates f on all 2ⁿ inputs, because a simulator must know the whole unitary. That is the cost of simulating a quantum computer on a classical one; the algorithm itself still makes a single query.
+- **Deterministic by nature.** Under the promise, Deutsch–Jozsa is never wrong, so repeated runs on the same function always agree on the verdict. For some balanced functions the measured bit string varies between runs; it is just never all zeros.
 
 ## Licences
 
