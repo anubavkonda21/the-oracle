@@ -1,5 +1,6 @@
 import { createElement } from '../dom';
 import { createControlButton } from '../components/controlButton';
+import { Q_COPY } from '../../../qcopy';
 
 export interface CreditsViewOptions {
   onNext: () => void;
@@ -13,21 +14,21 @@ export function createCreditsView({ onNext }: CreditsViewOptions): CreditsView {
   const creditsText = [
     'THE ORACLE',
     'A QURIOSITY EXPERIMENT',
-    'DEUTSCH–JOZSA ALGORITHM',
+    Q_COPY.title,
     '',
     'CREATED BY',
     'ANUBAV K',
     '',
     'BUILT WITH',
     'TypeScript',
-    'Phaser',
+    Q_COPY.p,
     'Vite',
     'Vitest',
     '',
-    'QUANTUM SYSTEM',
+    Q_COPY.system,
     'State-vector simulation',
-    'Quantum Oracle',
-    'Deutsch–Jozsa',
+    Q_COPY.oracle,
+    Q_COPY.short,
     '',
     'QURIOSITY',
     '2026',

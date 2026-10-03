@@ -455,6 +455,11 @@ describe('Investigation: the hidden function stays hidden', () => {
     expect(JSON.stringify(investigation)).toBe('{"inputLength":6,"inputSpaceSize":64}');
   });
 
+  it('offers no property or method that describes the function', () => {
+    const members = Object.getOwnPropertyNames(Investigation.prototype).sort();
+    expect(members).toEqual(['ask', 'constructor', 'find', 'progress', 'record']);
+  });
+
   it('reports the same progress whatever the machine does: only what was asked counts', () => {
     const always0 = new Investigation(new GameOracle(createConstantFunction(3, 0)));
     const always1 = new Investigation(new GameOracle(createConstantFunction(3, 1)));

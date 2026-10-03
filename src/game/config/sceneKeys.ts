@@ -1,11 +1,10 @@
-/** Scene keys live apart from the scene classes so scenes can reference each other without import cycles. */
 export const SCENE_KEYS = {
   boot: 'Boot',
   preload: 'Preload',
   mainMenu: 'MainMenu',
   laboratory: 'Laboratory',
   box: 'Box',
-  quantum: 'Quantum',
+  quantum: 'QMode',
   reveal: 'Reveal',
   credits: 'Credits',
 } as const;

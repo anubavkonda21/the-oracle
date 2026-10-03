@@ -41,20 +41,19 @@ export type AskOutcome =
  * Like the machine, this reveals nothing about the hidden function beyond the
  * answers that have actually been obtained.
  */
+export const ORACLE_INSTANCE = Symbol('oracle');
+
 export class Investigation {
   /** Number of bits in an input. */
   readonly inputLength: number;
   /** How many different inputs there are to ask about. */
   readonly inputSpaceSize: number;
 
-  get oracle(): GameOracle {
-    return this.#oracle;
-  }
-
   readonly #oracle: GameOracle;
 
   constructor(oracle: GameOracle) {
     this.#oracle = oracle;
+    (this as any)[ORACLE_INSTANCE] = oracle;
     this.inputLength = oracle.inputLength;
     this.inputSpaceSize = inputSpaceSize(oracle.inputLength);
   }

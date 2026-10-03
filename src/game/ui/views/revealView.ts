@@ -1,5 +1,6 @@
 import { createElement } from '../dom';
 import { createControlButton } from '../components/controlButton';
+import { Q_COPY } from '../../../qcopy';
 
 export interface RevealViewOptions {
   onNext: () => void;
@@ -14,10 +15,10 @@ export function createRevealView({ onNext }: RevealViewOptions): RevealView {
   const lines = [
     createElement('p', { className: 'readout', text: 'YOU DIDN\'T CHECK EVERY POSSIBILITY.' }),
     createElement('p', { className: 'readout', text: 'YOU CHANGED THE WAY YOU ASKED THE QUESTION.' }),
-    createElement('p', { className: 'readout', text: 'THE DEUTSCH–JOZSA ALGORITHM' }),
-    createElement('p', { className: 'readout', text: 'CONSTANT → 000000' }),
-    createElement('p', { className: 'readout', text: 'BALANCED → NON-ZERO MEASUREMENT' }),
-    createElement('p', { className: 'readout', text: 'QUANTUM ORACLE QUERIES → 1' }),
+    createElement('p', { className: 'readout', text: Q_COPY.title }),
+    createElement('p', { className: 'readout', text: `${Q_COPY.c} → 000000` }),
+    createElement('p', { className: 'readout', text: `${Q_COPY.b} → NON-ZERO MEASUREMENT` }),
+    createElement('p', { className: 'readout', text: `${Q_COPY.queries} → 1` }),
   ];
 
   for (const line of lines) {

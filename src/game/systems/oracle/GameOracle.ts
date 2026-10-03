@@ -24,18 +24,17 @@ export interface OracleQuery {
  * property of it. Swapping in a different function changes the machine's
  * behaviour without touching the interface.
  */
+export const HIDDEN_FUNCTION = Symbol('hiddenFunction');
+
 export class GameOracle {
   readonly inputLength: number;
 
   readonly #hiddenFunction: BooleanFunction;
   readonly #history: OracleQuery[] = [];
 
-  get hiddenFunction(): BooleanFunction {
-    return this.#hiddenFunction;
-  }
-
   constructor(hiddenFunction: BooleanFunction) {
     this.#hiddenFunction = hiddenFunction;
+    (this as any)[HIDDEN_FUNCTION] = hiddenFunction;
     this.inputLength = hiddenFunction.inputQubitCount;
   }
 

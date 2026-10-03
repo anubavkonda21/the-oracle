@@ -1,6 +1,8 @@
 import { DESIGN_WIDTH } from '../config/display';
 import { MACHINE_CENTER_Y, ORACLE_TIMING } from '../config/oracleConfig';
 import { PROMISE_COPY, PROMISE_TIMING } from '../config/promiseConfig';
+import { ORACLE_INSTANCE } from '../systems/oracle/Investigation';
+import { HIDDEN_FUNCTION } from '../systems/oracle/GameOracle';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { prefersReducedMotion } from '../effects/motion';
 import { OracleMachine } from '../entities/OracleMachine';
@@ -300,7 +302,9 @@ export class LaboratoryScene extends StageScene {
 
 
   private enterQuantumMode(): void {
-    this.leaveTo(SCENE_KEYS.quantum, { hiddenFunction: this.investigation.oracle.hiddenFunction });
+    const oracle = (this.investigation as any)[ORACLE_INSTANCE];
+    const hiddenFunction = oracle[HIDDEN_FUNCTION];
+    this.leaveTo(SCENE_KEYS.quantum, { hiddenFunction });
   }
 
   private openBox(): void {

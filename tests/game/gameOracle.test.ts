@@ -137,6 +137,11 @@ describe('GameOracle: the hidden function stays hidden', () => {
     expect(JSON.stringify(oracle)).toBe('{"inputLength":6}');
   });
 
+  it('offers no property or method that describes the function', () => {
+    const members = Object.getOwnPropertyNames(GameOracle.prototype).sort();
+    expect(members).toEqual(['constructor', 'history', 'query', 'queryCount']);
+  });
+
   it('never evaluates the function except to answer a query', () => {
     let evaluations = 0;
     const oracle = new GameOracle(

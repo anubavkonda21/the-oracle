@@ -1,6 +1,7 @@
 import type { BooleanFunction } from '../../quantum';
 import { createOracle } from '../../quantum/oracle';
 import { runDeutschJozsa } from '../../quantum/deutschJozsa';
+import { Q_COPY } from '../../qcopy';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { StageScene } from './StageScene';
 import { createQuantumView, type QuantumView } from '../ui/views/quantumView';
@@ -30,7 +31,7 @@ export class QuantumScene extends StageScene {
   }
 
   private runAlgorithm(): void {
-    const stages = ['PREPARE', 'SUPERPOSITION', 'ORACLE', 'INTERFERENCE', 'MEASURE'];
+    const stages = [Q_COPY.prep, Q_COPY.sup, Q_COPY.or, Q_COPY.inter, Q_COPY.meas];
     let delay = 0;
     for (const stage of stages) {
         this.afterDelay(delay, () => this.view.setStage(stage));

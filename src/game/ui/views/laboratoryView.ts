@@ -19,6 +19,7 @@ import { createInputSpaceMap } from '../components/inputSpaceMap';
 import { createPanel } from '../components/panel';
 import { createStatusIndicator, setStatusLabel } from '../components/statusIndicator';
 import { createElement, restartAnimation, uniqueId } from '../dom';
+import { Q_COPY } from '../../../qcopy';
 
 /** How long an announcement stays in the page: long enough for a screen reader to have picked it up. */
 const ANNOUNCEMENT_LIFETIME_MS = 4000;
@@ -179,7 +180,7 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
   }
 
   const quantumModeButton = createControlButton({
-    label: 'ENTER QUANTUM MODE',
+    label: Q_COPY.enter,
     variant: 'quiet',
     onActivate: () => onEnterQuantumMode?.(),
   });
@@ -290,8 +291,8 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
     },
 
     revealPromise(arrive = true) {
-      if (onEnterQuantumMode) { quantumModeButton.hidden = false; }
       constraint.element.hidden = false;
+      if (onEnterQuantumMode) { quantumModeButton.style.display = 'block'; }
       if (arrive) {
         constraint.arrive();
         announce(PROMISE_COPY.announcement);
