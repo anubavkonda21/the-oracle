@@ -35,6 +35,7 @@ export interface LaboratoryViewOptions {
   /** Whether the player has already observed THE BOX in this session. */
   boxObserved: boolean;
   onOpenBox: () => void;
+onEnterQuantumMode?: () => void;
   /** The player chose one of the two kinds of machine as their conclusion. */
   onConclude: (kind: OracleKind) => void;
 }
@@ -99,7 +100,7 @@ export interface LaboratoryView {
  * printed above the machine.
  */
 export function createLaboratoryView(options: LaboratoryViewOptions): LaboratoryView {
-  const { levelNumber, objective, inputLength, onToggleBit, onFocusBit, onAsk, onReturn, boxObserved, onOpenBox, onConclude } =
+  const { levelNumber, objective, inputLength, onToggleBit, onFocusBit, onAsk, onReturn, boxObserved, onOpenBox, onConclude, onEnterQuantumMode } =
     options;
   const titleId = uniqueId('laboratory-title');
   const inputLabelId = uniqueId('input-label');
@@ -177,9 +178,17 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
     }, ANNOUNCEMENT_LIFETIME_MS);
   }
 
+  const quantumModeButton = createControlButton({
+    label: 'ENTER QUANTUM MODE',
+    variant: 'quiet',
+    onActivate: () => onEnterQuantumMode?.(),
+  });
+  quantumModeButton.hidden = true;
+
   const footer = createElement('footer', { className: 'laboratory__footer' }, [
     createPanel({ heading: 'OBJECTIVE', content: [objectiveText] }),
     createElement('div', { className: 'laboratory__actions' }, [
+      quantumModeButton,
       // The other apparatus in the facility. Once it has been observed, the control says so in place of its key hint.
       createControlButton({
         label: 'THE BOX',
@@ -281,6 +290,7 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
     },
 
     revealPromise(arrive = true) {
+      if (onEnterQuantumMode) { quantumModeButton.hidden = false; }
       constraint.element.hidden = false;
       if (arrive) {
         constraint.arrive();

@@ -1,6 +1,9 @@
 import Phaser from 'phaser';
 import { BootScene } from '../scenes/BootScene';
 import { BoxScene } from '../scenes/BoxScene';
+import { QuantumScene } from '../scenes/QuantumScene';
+import { RevealScene } from '../scenes/RevealScene';
+import { CreditsScene } from '../scenes/CreditsScene';
 import { LaboratoryScene } from '../scenes/LaboratoryScene';
 import { MainMenuScene } from '../scenes/MainMenuScene';
 import { PreloadScene } from '../scenes/PreloadScene';
@@ -39,6 +42,6 @@ export function createGameConfig({ parent, renderResolution }: GameConfigOptions
     },
     // Sound arrives in a later checkpoint. Until then, don't create an audio context at all.
     audio: { noAudio: true },
-    scene: [BootScene, PreloadScene, MainMenuScene, LaboratoryScene, BoxScene],
+    scene: [BootScene, PreloadScene, MainMenuScene, LaboratoryScene, BoxScene, QuantumScene, RevealScene, CreditsScene],
   };
 }

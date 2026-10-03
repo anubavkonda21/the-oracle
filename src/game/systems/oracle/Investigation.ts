@@ -11,6 +11,7 @@ export interface InvestigationProgress {
   readonly untestedCount: number;
   /** How many different inputs there are: 2^n for an n-bit input. */
   readonly inputSpaceSize: number;
+
 }
 
 /**
@@ -45,6 +46,10 @@ export class Investigation {
   readonly inputLength: number;
   /** How many different inputs there are to ask about. */
   readonly inputSpaceSize: number;
+
+  get oracle(): GameOracle {
+    return this.#oracle;
+  }
 
   readonly #oracle: GameOracle;
 

@@ -30,6 +30,10 @@ export class GameOracle {
   readonly #hiddenFunction: BooleanFunction;
   readonly #history: OracleQuery[] = [];
 
+  get hiddenFunction(): BooleanFunction {
+    return this.#hiddenFunction;
+  }
+
   constructor(hiddenFunction: BooleanFunction) {
     this.#hiddenFunction = hiddenFunction;
     this.inputLength = hiddenFunction.inputQubitCount;

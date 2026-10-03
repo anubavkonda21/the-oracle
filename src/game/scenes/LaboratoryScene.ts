@@ -95,6 +95,7 @@ export class LaboratoryScene extends StageScene {
       boxObserved: this.session.hasObservedBox,
       onOpenBox: () => this.openBox(),
       onConclude: (kind) => this.conclude(kind),
+      onEnterQuantumMode: () => this.enterQuantumMode(),
     });
     this.enterStage(this.view.element);
 
@@ -295,6 +296,11 @@ export class LaboratoryScene extends StageScene {
 
   private returnToMenu(): void {
     this.leaveTo(SCENE_KEYS.mainMenu);
+  }
+
+
+  private enterQuantumMode(): void {
+    this.leaveTo(SCENE_KEYS.quantum, { hiddenFunction: this.investigation.oracle.hiddenFunction });
   }
 
   private openBox(): void {
