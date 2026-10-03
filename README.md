@@ -32,7 +32,7 @@ The game is built in numbered checkpoints, one commit each. Every checkpoint lea
 | [04 — First Playable Oracle Prototype](#checkpoint-04--first-playable-oracle-prototype) | [`cc1f928`](https://github.com/anubavkonda21/the-oracle/commit/cc1f928cd2fe551ff337c719010d6e1c6079c4eb) `feat: add first playable oracle prototype` | The game-level Oracle; the 6-bit input; the machine's processing and answer; the experiment log. | 478 |
 | [05 — The Box](#checkpoint-05--the-box) | [`9c50cf9`](https://github.com/anubavkonda21/the-oracle/commit/9c50cf9e422db261975647672520c3799ccaf2da) `feat: add The Box, an experiential introduction to measurement` | THE BOX scene; a single-qubit superposition measured by the engine; the dark room; session tracking; the way from the laboratory and back. | 532 |
 
-| [06 — Classical Investigation](#checkpoint-06--classical-investigation) | `feat: add the classical investigation` | The investigation and its record; the map of the input space; repeated inputs answered from the record, using no query; the laboratory's remarks as the queries add up. | 659 |
+| [06 — Classical Investigation](#checkpoint-06--classical-investigation) | [`b1a7b9a`](https://github.com/anubavkonda21/the-oracle/commit/b1a7b9abafbf6f889a3280f0fbe72e78271e50c7) `feat: add the classical investigation` | The investigation and its record; the map of the input space; repeated inputs answered from the record, using no query; the laboratory's remarks as the queries add up. | 659 |
 
 Still to come: the reveal of what the machine is promised to be, quantum mode, quantum visuals, story and sound. Commits that only touch documentation are not listed here; the complete log is on the [commits page](https://github.com/anubavkonda21/the-oracle/commits/main).
 
