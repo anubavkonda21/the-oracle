@@ -36,8 +36,10 @@ export function createRevealView({ result, onNext }: RevealViewOptions): RevealV
   const nextButton = createControlButton({
     label: 'CONTINUE',
     onActivate: onNext,
+    shortcut: { ariaKey: 'Enter' }
   });
   nextButton.style.opacity = '0';
+  nextButton.style.pointerEvents = 'none';
   nextButton.style.transition = 'opacity 1s';
 
   const element = createElement('section', { className: 'view reveal-view' }, [
@@ -52,6 +54,7 @@ export function createRevealView({ result, onNext }: RevealViewOptions): RevealV
         if (lines[index]) { lines[index].style.opacity = '1'; }
       } else {
         nextButton.style.opacity = '1';
+        nextButton.style.pointerEvents = 'auto';
       }
     }
   };

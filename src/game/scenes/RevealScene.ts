@@ -25,7 +25,7 @@ export class RevealScene extends StageScene {
 
     let delay = 1000;
     const pauses = [2000, 2000, 2000, 1000, 1000, 1000, 1000];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i <= 5; i++) {
         this.afterDelay(delay, () => this.view.showLine(i));
         delay += pauses[i] ?? 1000;
     }
