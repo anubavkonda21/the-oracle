@@ -10,7 +10,6 @@ import {
   type ColorToken,
 } from '../../src/game/config/designTokens';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from '../../src/game/config/display';
-import { COMPACT_VIEWPORT_QUERY } from '../../src/game/systems/desktopGate';
 import shellCss from '../../src/styles/shell.css?raw';
 import tokensCss from '../../src/styles/tokens.css?raw';
 import { contrastRatio } from '../../src/utils/color';
