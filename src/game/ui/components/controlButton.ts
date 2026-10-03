@@ -1,3 +1,4 @@
+import { audioManager } from '../../audio/AudioManager';
 import { createElement } from '../dom';
 
 export interface ControlShortcut {
@@ -45,6 +46,7 @@ export function createControlButton(options: ControlButtonOptions): HTMLButtonEl
   button.disabled = disabled;
   button.addEventListener('click', () => {
     if (!isUnavailable(button)) {
+      audioManager.playClick();
       onActivate();
     }
   });

@@ -1,3 +1,4 @@
+import { audioManager } from '../audio/AudioManager';
 import type { BooleanFunction } from '../../quantum';
 import { createOracle } from '../../quantum/oracle';
 import { runDeutschJozsa } from '../../quantum/deutschJozsa';
@@ -59,10 +60,13 @@ export class QuantumScene extends StageScene {
          const stageName = step.id === 'prepared' ? Q_COPY.prep : step.id === 'superposed' ? Q_COPY.sup : step.id === 'queried' ? Q_COPY.or : step.id === 'interfered' ? Q_COPY.inter : step.id === 'measured' ? Q_COPY.meas : '';
          if (stageName) this.view.setStage(stageName);
          this.view.renderState(step);
+         if (step.id === 'measured') audioManager.playMeasurement();
+         else audioManager.playQuantumStep(step.id);
        });
     }
     
     this.afterDelay(5500, () => {
+      audioManager.playResult();
       this.view.showResult(result, !this.hasRun);
       this.view.setStage('RESULT');
       this.hasRun = true;

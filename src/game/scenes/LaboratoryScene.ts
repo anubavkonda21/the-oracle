@@ -1,3 +1,4 @@
+import { audioManager } from '../audio/AudioManager';
 import { DESIGN_WIDTH } from '../config/display';
 import { MACHINE_CENTER_Y, ORACLE_TIMING } from '../config/oracleConfig';
 import { PROMISE_COPY, PROMISE_TIMING } from '../config/promiseConfig';
@@ -228,6 +229,7 @@ export class LaboratoryScene extends StageScene {
       this.view.setClassificationTask(PROMISE_COPY.objective, false);
       return;
     }
+    audioManager.playConstraintReveal();
     const wait = prefersReducedMotion() ? PROMISE_TIMING.reducedMotionObjectiveDelayMs : PROMISE_TIMING.objectiveDelayMs;
     this.afterDelay(wait, () => this.view.setClassificationTask(PROMISE_COPY.objective));
   }
@@ -304,6 +306,7 @@ export class LaboratoryScene extends StageScene {
   private enterQuantumMode(): void {
     const oracle = (this.investigation as any)[ORACLE_INSTANCE];
     const hiddenFunction = oracle[HIDDEN_FUNCTION];
+    audioManager.playQuantumTransition();
     this.leaveTo(SCENE_KEYS.quantum, { hiddenFunction });
   }
 

@@ -1,3 +1,4 @@
+import { audioManager } from '../../audio/AudioManager';
 import type { GameOracle, OracleQuery } from './GameOracle';
 import { inputSpaceSize } from './inputSpace';
 
@@ -69,6 +70,7 @@ export class Investigation {
     if (recorded) {
       return { kind: 'recalled', query: recorded };
     }
+    audioManager.playOracleQuery();
     return { kind: 'asked', query: this.#oracle.query(input) };
   }
 

@@ -1,3 +1,4 @@
+import { audioManager } from '../audio/AudioManager';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { listenForKeyPresses } from '../systems/keyboard';
 import { createMainMenuView } from '../ui/views/mainMenuView';
@@ -10,7 +11,7 @@ export class MainMenuScene extends StageScene {
   }
 
   create(): void {
-    const enterLaboratory = (): void => this.leaveTo(SCENE_KEYS.laboratory);
+    const enterLaboratory = (): void => { audioManager.init(); this.leaveTo(SCENE_KEYS.laboratory); };
 
     this.enterStage(createMainMenuView({ onEnter: enterLaboratory }));
 
