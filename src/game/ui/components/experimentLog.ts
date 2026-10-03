@@ -23,8 +23,11 @@ export interface ExperimentLog {
  * It can also be consulted. The entry for the input the player is composing
  * is marked, and an entry can be recalled — brought into view and pointed out
  * — which is what happens instead of a query when an input is repeated.
+ *
+ * `summary` is anything else drawn from the record that belongs at its head,
+ * between the count and the entries.
  */
-export function createExperimentLog(): ExperimentLog {
+export function createExperimentLog(summary?: HTMLElement): ExperimentLog {
   const count = createElement('span', { className: 'log__count-value', text: formatCount(0) });
   const emptyNotice = createElement('p', { className: 'log__empty', text: 'NO QUERIES RECORDED' });
   const rows = createElement('tbody');
@@ -54,6 +57,7 @@ export function createExperimentLog(): ExperimentLog {
     heading: 'EXPERIMENT LOG',
     content: [
       createElement('p', { className: 'log__count' }, [createElement('span', { text: 'QUERIES USED' }), count]),
+      ...(summary ? [summary] : []),
       emptyNotice,
       scrollArea,
     ],

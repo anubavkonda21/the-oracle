@@ -7,13 +7,14 @@ A browser-playable mystery game for the Quriosity quantum game-development compe
 
 ## Status
 
-**Checkpoint 06 — Classical Investigation.** The laboratory is now an investigation: the player questions the machine one input at a time, and the laboratory keeps the record, shows how much of the input space is still untested, and never spends a query on an input it has already asked. The player is left to notice, unprompted, how slowly this goes. There is deliberately **no other way of asking yet, nothing to submit, no quantum mode for the Oracle, no story and no sound**; `src/story/`, `src/data/` and `src/audio/` are empty placeholders for later checkpoints.
+**Checkpoint 07 — The Promise.** Part-way through the investigation the laboratory discloses the one thing that is known about the machine: it is guaranteed to obey one of two rules. The task changes from finding out everything the machine does to telling which of the two kinds it is, and the record now shows the evidence that bears on that. The player can put a conclusion on record; the laboratory says whether the record establishes it, never whether it is right — nothing in the game knows the answer. There is deliberately **no other way of asking yet, no quantum mode for the Oracle, no victory, no story and no sound**; `src/story/`, `src/data/` and `src/audio/` are empty placeholders for later checkpoints.
 
 What exists today:
 
 - Main menu → `ENTER` → the laboratory → `ESC` / `RETURN` back to the menu
 - A playable loop in the laboratory: binary input → ask → processing → output → experiment log (see [Checkpoint 04](#checkpoint-04--first-playable-oracle-prototype))
 - The classical investigation built on that loop: a map of all 64 possible inputs, a record that can be consulted, repeated inputs that use no query, and remarks that grow more pointed as the queries add up (see [Checkpoint 06](#checkpoint-06--classical-investigation))
+- The promise, and the classification it sets: the constraint the machine is under, the evidence on record, and a conclusion that is judged against that evidence alone (see [Checkpoint 07](#checkpoint-07--the-promise))
 - THE BOX: a sealed box, one action — OBSERVE — and one definite outcome, measured on the real state-vector engine (see [Checkpoint 05](#checkpoint-05--the-box))
 - A design system (colour, type, motion tokens) shared by CSS and canvas code
 - A responsive 1440 × 900 stage that scales to the window and stays sharp on high-density screens
@@ -34,7 +35,9 @@ The game is built in numbered checkpoints, one commit each. Every checkpoint lea
 
 | [06 — Classical Investigation](#checkpoint-06--classical-investigation) | [`b1a7b9a`](https://github.com/anubavkonda21/the-oracle/commit/b1a7b9abafbf6f889a3280f0fbe72e78271e50c7) `feat: add the classical investigation` | The investigation and its record; the map of the input space; repeated inputs answered from the record, using no query; the laboratory's remarks as the queries add up. | 659 |
 
-Still to come: the reveal of what the machine is promised to be, quantum mode, quantum visuals, story and sound. Commits that only touch documentation are not listed here; the complete log is on the [commits page](https://github.com/anubavkonda21/the-oracle/commits/main).
+| [07 — The Promise](#checkpoint-07--the-promise) | `feat: add the promise and the classification objective` | The promise, checked against the hidden function; the constraint disclosed in the laboratory; a classifier that reasons from the record alone; the classification objective and a conclusion on record. | 832 |
+
+Still to come: quantum mode, quantum visuals, story and sound. Commits that only touch documentation are not listed here; the complete log is on the [commits page](https://github.com/anubavkonda21/the-oracle/commits/main).
 
 ## Stack
 
@@ -75,8 +78,9 @@ src/
 │   ├── scenes/             Boot → Preload → MainMenu ⇄ Laboratory ⇄ Box
 │   ├── entities/           things on the canvas (the machine, the box)
 │   ├── systems/            shared services, session, keyboard, font loading, desktop gate
-│   │   ├── oracle/         the machine's game logic: the Oracle, the input model, the prototype rule,
-│   │   │                   and the investigation of it — the record, the input space, the remarks
+│   │   ├── oracle/         the machine's game logic: the Oracle, the input model, the prototype rule;
+│   │   │                   the investigation of it — the record, the input space, the remarks;
+│   │   │                   and the promise — its check, the evidence, the classification
 │   │   └── box/            THE BOX's logic: one qubit, prepared and measured on the quantum engine
 │   ├── ui/                 the HTML layer: components and per-scene views
 │   └── effects/            paper grain, scene fade, stage environment, motion preference
@@ -87,7 +91,8 @@ src/
 └── story/ data/ audio/     reserved for later checkpoints
 tests/
 ├── game/                   tokens, display maths, paper grain, the game Oracle, input model, the investigation,
-│                           the input space, the remarks, THE BOX, session, player-facing text
+│                           the input space, the remarks, the promise, the evidence, the classification,
+│                           THE BOX, session, player-facing text
 ├── quantum/                complex numbers, states, gates, measurement, oracle, Deutsch–Jozsa, independence
 └── utils/                  colour, formatting, seeded random
 ```
@@ -296,7 +301,7 @@ The prototype's function is fixed (`createPrototypeOracle()` in `prototypeOracle
 
 ### What the player sees
 
-Nothing in the laboratory names a concept the player has not met. The words *constant*, *balanced*, *phase*, *Hadamard* and *Deutsch–Jozsa* appear nowhere the player can read, and *quantum* and *superposition* appear only in the short context of THE BOX (Checkpoint 05), after the player has observed. A test scans every string in the game layer to keep it that way.
+Nothing in the laboratory names a concept the player has not met. The words *phase*, *Hadamard*, *qubit* and *Deutsch–Jozsa* appear nowhere the player can read. *Quantum* and *superposition* appear only in the short context of THE BOX (Checkpoint 05), after the player has observed. *Constant* and *balanced* appear only in the text of the constraint (Checkpoint 07), none of which is shown until the laboratory discloses it. A test scans every string in the game layer to keep it that way.
 
 | Control | Mouse | Keyboard |
 | --- | --- | --- |
@@ -390,7 +395,7 @@ The laboratory becomes an investigation. The player still asks the machine about
 
 Nothing is explained. The aim is for the player to arrive, on their own, at the thought *"I've asked the machine several questions… but I still don't really know what it does"* — and then at *"how am I supposed to find out efficiently?"* That question is what a later checkpoint answers.
 
-**Not here yet, on purpose:** any other way of asking. There is no quantum mode, nothing to classify or submit, and no reveal. The words *constant*, *balanced*, *phase*, *Hadamard* and *Deutsch–Jozsa* still appear nowhere the player can read, and the player is never asked to work out the machine's rule.
+**Not here yet, on purpose:** any other way of asking. At this checkpoint there was no quantum mode, nothing to classify or submit, and no reveal; the words *constant*, *balanced*, *phase*, *Hadamard* and *Deutsch–Jozsa* appeared nowhere the player could read. ([Checkpoint 07](#checkpoint-07--the-promise) adds the reveal, the classification and the first two of those words.) The player is never asked to work out the machine's rule.
 
 ### What the laboratory shows
 
@@ -433,7 +438,7 @@ One line at a time, and none before the first query: the player acts first. The 
 | 3 | Each answer describes a single input, and no other. |
 | 5 | 59 of the 64 possible inputs are untested. |
 | 8 | 8 answers on record. What the machine does is still unknown. |
-| 11 | One input at a time, a complete record would take 64 queries. |
+| 11 | One input at a time, certainty can take as many as 33 queries. *(Until Checkpoint 07 this read "…a complete record would take 64 queries." By this query the constraint has been disclosed, so the cost that matters is the cost of being sure which kind the machine is.)* |
 | 14 | There may be a better way to ask. |
 | 32 | 32 queries, and 32 inputs are still unknown. There may be a better way to ask. |
 | 64 | Every input is on record. It took 64 queries: one for each. |
@@ -464,6 +469,111 @@ Twenty-three deliberate bugs were introduced one at a time (a repeat that uses a
 
 The interface was exercised in a browser: sixty-four queries to a complete record, repeats at every stage, the keyboard alone, leaving for THE BOX mid-query, and the layout at six window sizes.
 
+## Checkpoint 07 — The Promise
+
+Until now the player has been investigating a machine about which nothing was known. This checkpoint introduces the one thing that *is* known — and with it the question the rest of the game is about.
+
+It adds no new way of asking, and it does not teach the Deutsch–Jozsa algorithm: the player has still only ever asked about one input at a time. What they have now is the **problem** that algorithm solves, and a first-hand sense of what it costs to solve it this way.
+
+### The promise
+
+> This machine is guaranteed to obey one of two rules.
+
+| Kind | What such a machine does | For six bits (64 possible inputs) |
+| --- | --- | --- |
+| **CONSTANT** | Every possible input produces the same output. | All 64 alike: `64 / 0` |
+| **BALANCED** | Half of all possible inputs produce 0. Half produce 1. | Exactly `32 / 32` |
+
+Nothing in between is allowed. That is the promise.
+
+**It is true of the machine, not merely said of it.** A machine is now built only by `createPromisedOracle(f)` (`systems/oracle/promise.ts`), which works out every output of the hidden function, counts them, and refuses a function that is neither kind — one stray output is enough. The check runs once, before the machine exists, and uses none of the player's queries.
+
+The laboratory's machine is the same function it has been since Checkpoint 04; it was not changed to fit. It is **balanced**: of its 64 inputs, exactly 32 answer 0 and exactly 32 answer 1.
+
+**Nothing in the game holds the answer.** The check throws the kind away once it has passed: no machine, investigation or interface keeps it, so none of them can give it away. It has to be found out.
+
+### How the player meets it
+
+At the eighth query the laboratory remarks, as before, that what the machine does "is still unknown" — and then a plate appears above the machine, with the one thing that is known:
+
+1. `ORACLE CONSTRAINT` — a system state, with the signal dot.
+2. *This machine is guaranteed to obey one of two rules.*
+3. What a machine under each rule **does**, side by side.
+4. Only then, what the two are **called**: `CONSTANT · 64 / 0` and `BALANCED · 32 / 32`.
+
+Once the names have arrived, the objective changes from *Find out what the machine does* to:
+
+> Determine which kind of Oracle you are dealing with.
+
+There is no modal, no quiz and no lecture, and nothing waits for the player: the plate arrives over about three seconds while the laboratory stays usable, and then remains as a reference. Until that moment, none of it exists as far as the player — or a screen reader — can tell.
+
+### Classical evidence
+
+With the task comes the evidence that bears on it, at the head of the experiment log:
+
+`OUTPUTS OBSERVED` — `0 ONLY`, `1 ONLY` or `0 AND 1`.
+
+That is all it says. It states what is on record and draws no conclusion; the reasoning is the player's.
+
+The reasoning itself lives in `systems/oracle/evidence.ts`, a pure classifier that is handed the record and the size of the input space, and nothing else:
+
+| On record | What that rules out | So, given the promise |
+| --- | --- | --- |
+| Two different outputs | Constant | **Balanced** |
+| One output, for at most half of all inputs | Nothing | Undetermined: both kinds could have answered this way |
+| One output, for *more* than half — 33 of 64 | Balanced | **Constant** |
+| Every input | Everything but the truth | Classified exactly |
+
+A balanced machine gives each output for exactly half of all inputs, so half can agree by coincidence and not one more. That is where 33 comes from.
+
+The classifier never sees the machine. It does not inspect the hidden function, work out an answer that has not been observed, or use the quantum engine — its only imports are two types, and a test checks that. So whatever it concludes, the player could conclude from the same record.
+
+### A conclusion on record
+
+Below the evidence are two controls, `CONSTANT` and `BALANCED`. Choosing one puts that conclusion on record; choosing it again takes it back. The laboratory then says how the conclusion stands **against the record**:
+
+| Standing | Meaning | With it, the evidence that decides |
+| --- | --- | --- |
+| `ESTABLISHED` | The record has ruled the other kind out. | `0 AND 1 OBSERVED`, or `33 OF 64 AGREE` |
+| `NOT ESTABLISHED` | The record allows it — and still allows the other kind too. | `8 OF 64 AGREE · 33 NEEDED`, or `ONLY 0 OBSERVED` |
+| `CONTRADICTED` | The record has ruled it out. | `0 AND 1 OBSERVED`, or `33 OF 64 AGREE` |
+
+This is not a grade. The laboratory cannot say whether a conclusion is *right*, because it does not know; it can only say what the record shows, which is all the player can know either. A conclusion is re-judged as each answer comes in, so one recorded too early can be overturned by the next query. There is no "classify" button that produces the answer, and nothing is announced that the player has not concluded for themselves.
+
+### What it costs, one input at a time
+
+- **At best, two queries** — two different outputs settle it.
+- **At worst, 33** — a constant machine cannot be told from a balanced one until more than half of its inputs have agreed.
+
+The game does not force the worst case or script the moment of discovery. It states the figure once, in the remark at the eleventh query — *One input at a time, certainty can take as many as 33 queries* — and shows it whenever a player concludes *constant* from a run of identical answers. With this machine that is easy to do: the inputs people try first (`000000`, `111111`, `101010`, `010101`, `111000`, `000111`) all answer 0.
+
+The remark that follows, at the fourteenth query, is unchanged: *There may be a better way to ask.*
+
+### What was left alone
+
+- **Checkpoint 06 is intact** — the 6-bit input, the map, the query count, the log, repeated inputs, THE BOX and the keyboard all work as before. One remark was reworded (see the table under Checkpoint 06).
+- **THE BOX says nothing new.** The parallel between the two rooms — an uncertain state, an observation, a definite outcome; an unknown machine, observations, evidence — is left for the player to notice.
+- **The visual language is still classical**: paper, black, grey, and the red signal dot. Quantum indigo remains unused.
+- **Accessibility.** The two conclusion controls are real buttons, in the tab order, operable with `Enter` or `Space`. The chosen one is shown filled and marked `aria-pressed`, and its standing is given in words, so nothing rests on colour. The figures `64 / 0` and `32 / 32` are also given as sentences to a screen reader. The arrival animations are switched off under `prefers-reduced-motion`.
+
+### Tests
+
+173 new tests, 832 in the project:
+
+- **The promise** — constant functions keep it and so do balanced ones (every parity function of one to six bits, and random balanced functions that are not parities); everything else is refused, including functions one output away from balanced; of the 256 functions of three bits exactly 2 + 70 are accepted and 184 refused.
+- **The laboratory's machine** — exactly 32 inputs answer 0 and 32 answer 1; it is the function pinned since Checkpoint 04; it is built through the check; changing any single answer would have had it refused.
+- **Nothing holds the answer** — the truth table of a hidden function is worked out in one module only, and only the builder of the machine can reach it.
+- **Evidence** — both outputs rule out constant; one output, up to half of all inputs, settles nothing; 33 identical answers rule out balanced and 32 do not; a complete record classifies exactly. For every promised machine of one, two and three bits, against every set of inputs that could be on record, the classifier concludes exactly what the record allows — no more and no less.
+- **Seeing only the record** — the classifier works from a hand-written record with no machine anywhere, consults no machine, and imports nothing that could.
+- **The cost** — two queries at best; exactly 33 for a constant machine, in every order tried; 33 for a balanced one asked in an unlucky order; never more, across forty random machines.
+- **The conclusion** — recorded, changed and withdrawn; judged against the record as it grows; never established for both kinds at once.
+- **The text** — the two names appear only in the text of the constraint; the behaviours are described without them; the interface code never spells them; nothing names a later idea or a verdict.
+- **The laboratory** — the constraint and the controls are built hidden; the task is set only after the names have arrived; the laboratory never announces a verdict of its own.
+
+Thirty-eight deliberate bugs were introduced one at a time (a function let through that breaks the promise, 32 identical answers accepted as proof, one output taken as proof of constant, a repeat counted as new evidence, the names shown before the behaviours, the laboratory announcing its own verdict, indigo in the laboratory, and others). The tests caught all thirty-eight.
+
+The interface was exercised in a browser: the reveal timed part by part, each standing of a conclusion reached and overturned, the keyboard alone, THE BOX and back mid-reveal, and the layout at seven window sizes.
+
 ## Known limits
 
 - **Desktop only.** Below a 900px-wide viewport the game is replaced by a notice.
@@ -471,7 +581,9 @@ The interface was exercised in a browser: sixty-four queries to a complete recor
 - **Bundle size.** Phaser is included whole (about 320 kB gzipped). A trimmed custom Phaser build is a later optimisation.
 - **Quantum engine scope.** Multi-qubit operations are limited to permutations of basis states, which is all an oracle needs; there is no general multi-qubit gate (an arbitrary controlled rotation, say).
 - **Simulating the oracle is not free.** Building U_f evaluates f on all 2ⁿ inputs, because a simulator must know the whole unitary. That is the cost of simulating a quantum computer on a classical one; the algorithm itself still makes a single query.
-- **Investigation scope.** The machine has one fixed hidden rule, and the investigation has no conclusion to submit and nothing that ends it. The record is not saved: it survives a visit to THE BOX, but returning to the main menu — one press of `Esc` — clears it.
+- **Investigation scope.** The machine has one fixed hidden rule, and nothing ends the investigation: a conclusion can be put on record, and the laboratory says how it stands, but there is no victory and no next level yet. The record and the conclusion are not saved: they survive a visit to THE BOX, but returning to the main menu — one press of `Esc` — clears them.
+- **This machine is quick to classify.** The laboratory's machine is balanced, so its kind is settled as soon as two different outputs are on record — two queries, with luck. The 33-query worst case is only met by a constant machine, or by a balanced one asked in an unlucky order. The game does not force it; it states the figure, and shows it when a player concludes *constant* from a run of identical answers.
+- **The constraint arrives on a count.** It is disclosed at the eighth query, whatever the answers have been, and cannot be asked for sooner.
 - **A query in flight counts.** If the player leaves for THE BOX while the machine is still working, that query is on record when they return, with its answer, though they did not see it arrive.
 - **The map is drawn cell by cell.** That suits six bits (64 cells). A machine with a much longer input would need a different picture.
 - **Session only.** Whether THE BOX has been observed is remembered until the page is reloaded, and no longer.

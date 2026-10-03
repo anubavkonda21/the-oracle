@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { INVESTIGATION_COPY, INVESTIGATION_NOTES } from '../../src/game/config/investigationConfig';
 import { ORACLE_INPUT_LENGTH } from '../../src/game/config/oracleConfig';
 import type { InvestigationProgress } from '../../src/game/systems/oracle/Investigation';
+import { agreementNeeded } from '../../src/game/systems/oracle/evidence';
 import { inputSpaceSize } from '../../src/game/systems/oracle/inputSpace';
 import { investigationNote } from '../../src/game/systems/oracle/investigationNotes';
 
@@ -77,8 +78,15 @@ describe('what the laboratory remarks: the train of thought', () => {
     expect(textAt(8)).toBe('8 answers on record. What the machine does is still unknown.');
   });
 
-  it('then what finishing this way would cost', () => {
-    expect(textAt(11)).toBe('One input at a time, a complete record would take 64 queries.');
+  it('then what being sure would cost, this way: more than half of all inputs, at worst', () => {
+    // By this query the laboratory has disclosed that the machine is one of two kinds (see classification.test.ts).
+    expect(textAt(11)).toBe('One input at a time, certainty can take as many as 33 queries.');
+    expect(agreementNeeded(64)).toBe(33);
+  });
+
+  it('quotes that cost for the machine in hand: one more than half of its inputs', () => {
+    expect(textAt(11, 5)).toBe('One input at a time, certainty can take as many as 17 queries.');
+    expect(textAt(11, 7)).toBe('One input at a time, certainty can take as many as 65 queries.');
   });
 
   it('and finally wonders whether there is a better way to ask — without saying that there is', () => {
@@ -116,13 +124,13 @@ describe('what the laboratory remarks: it is true while it is shown', () => {
     expect(textAt(63)).toBe('63 queries, and 1 input is still unknown. There may be a better way to ask.');
   });
 
-  it('quotes no number that is not the queries used, the inputs untested or the inputs there are', () => {
+  it('quotes no number that is not the queries used, the inputs untested, the inputs there are, or the 33 that certainty can take', () => {
     for (const queries of SIX_BIT_QUERIES) {
       const { untestedCount, inputSpaceSize: size } = progressAt(queries);
       const quoted = (textAt(queries).match(/\d+/g) ?? []).map(Number);
 
       for (const number of quoted) {
-        expect([queries, untestedCount, size]).toContain(number);
+        expect([queries, untestedCount, size, agreementNeeded(size)]).toContain(number);
       }
     }
   });

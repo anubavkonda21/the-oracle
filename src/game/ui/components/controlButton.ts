@@ -68,3 +68,12 @@ export function setUnavailable(control: HTMLElement, unavailable: boolean): void
 export function isUnavailable(control: HTMLElement): boolean {
   return control.getAttribute('aria-disabled') === 'true';
 }
+
+/**
+ * Makes a control one that stays down: a choice that is either made or not.
+ * It is drawn filled while pressed (styles: `.control[aria-pressed]`), and
+ * `aria-pressed` tells assistive technology the same thing.
+ */
+export function setPressed(control: HTMLElement, pressed: boolean): void {
+  control.setAttribute('aria-pressed', String(pressed));
+}

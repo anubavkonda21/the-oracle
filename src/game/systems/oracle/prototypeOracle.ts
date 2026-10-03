@@ -1,6 +1,7 @@
 import { createParityFunction } from '../../../quantum';
 import { ORACLE_INPUT_LENGTH } from '../../config/oracleConfig';
-import { GameOracle } from './GameOracle';
+import type { GameOracle } from './GameOracle';
+import { createPromisedOracle } from './promise';
 
 /**
  * Which bits of the input the prototype's rule depends on. The machine
@@ -16,7 +17,11 @@ const PROTOTYPE_RULE_MASK = 0b101101;
  * rather than random, so every session behaves identically and a bug can be
  * reproduced. Later checkpoints replace this one function; nothing else needs
  * to change.
+ *
+ * It is built through `createPromisedOracle`, which checks that the function
+ * keeps the promise the game makes about it and refuses one that does not.
+ * This function does: see tests/game/promise.test.ts.
  */
 export function createPrototypeOracle(): GameOracle {
-  return new GameOracle(createParityFunction(ORACLE_INPUT_LENGTH, PROTOTYPE_RULE_MASK));
+  return createPromisedOracle(createParityFunction(ORACLE_INPUT_LENGTH, PROTOTYPE_RULE_MASK));
 }

@@ -179,6 +179,67 @@
   padding-top: calc(12 * var(--u));
 }
 
+/*
+ * ---------- Classification: the evidence, and the conclusion drawn from it ----------
+ *
+ * Part of the record, at its head: which outputs have been observed, and the
+ * conclusion the player has put on record with how it stands. Hidden until
+ * the laboratory has disclosed the constraint and set the task.
+ */
+
+.classification {
+  display: grid;
+  /* Nothing here shrinks to make room for the entries; it is the entries that scroll. */
+  flex: none;
+  row-gap: calc(10 * var(--u));
+  padding: calc(10 * var(--u)) 0 calc(12 * var(--u));
+  border-bottom: var(--hairline) solid var(--color-border);
+}
+
+/* `hidden` must win over the display value above. */
+.classification[hidden] {
+  display: none;
+}
+
+.classification__row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.classification__conclusion {
+  display: grid;
+  row-gap: calc(8 * var(--u));
+}
+
+/* The two kinds, side by side and equal: neither is offered as the likelier. */
+.classification__choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: calc(8 * var(--u));
+}
+
+/* The evidence that decides how the conclusion stands. The line is kept even when empty, so recording a conclusion moves nothing. */
+.classification__reason {
+  min-height: 1em;
+}
+
+/* The task arriving, once the constraint above the machine has been read out in full. */
+.classification[data-arrived] {
+  animation: classification-arrive 520ms var(--ease-precise);
+}
+
+@keyframes classification-arrive {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .classification[data-arrived] {
+    animation: none;
+  }
+}
+
 .log__scroll {
   min-height: 0;
   overflow-y: auto;
@@ -427,6 +488,136 @@
 
 @media (prefers-reduced-motion: reduce) {
   .input-space__cell[data-arrived] {
+    animation: none;
+  }
+}
+
+/*
+ * ---------- Constraint: what is known about the machine, printed above it ----------
+ *
+ * That the machine obeys one of two rules; what a machine under each rule
+ * does; and what the two are called. It is set on the paper itself, not on a
+ * panel: a statement about the machine, like the plate on an instrument.
+ */
+
+.constraint {
+  /*
+   * How long each part takes to arrive. The laboratory waits for the last
+   * part before it sets the task (PROMISE_TIMING in promiseConfig.ts; a test
+   * keeps the two in step).
+   */
+  --constraint-arrival: 520ms;
+
+  text-align: center;
+}
+
+.constraint__heading {
+  display: flex;
+  justify-content: center;
+}
+
+.constraint__statement {
+  margin-top: calc(10 * var(--u));
+  line-height: 1.4;
+}
+
+/* The two rules, side by side and equal, with a hairline between them. */
+.constraint__rules {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: calc(14 * var(--u)) 0 0;
+}
+
+.constraint__rules::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: var(--hairline);
+  background: var(--color-border);
+}
+
+.constraint__rule {
+  padding: 0 calc(16 * var(--u));
+}
+
+/* The name of a kind, in full black; how the inputs divide under it, in grey beside it. */
+.constraint__name {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.constraint__split {
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}
+
+/* What a machine of that kind does. */
+.constraint__behaviour {
+  margin: calc(7 * var(--u)) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-small);
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+/*
+ * The arrival. The parts come in the order they are meant to be understood:
+ * that there are two rules; then what a machine under each one does; and
+ * only then — once the first of those has fully arrived — what the two are
+ * called. These are CSS animations, which run on real time, so the text is
+ * fully shown on schedule even if frames are dropped.
+ */
+.constraint[data-arrived] .constraint__heading,
+.constraint[data-arrived] .constraint__statement,
+.constraint[data-arrived] .constraint__behaviour,
+.constraint[data-arrived] .constraint__name,
+.constraint[data-arrived] .constraint__rules::before {
+  animation: constraint-arrive var(--constraint-arrival) var(--ease-precise) both;
+}
+
+.constraint[data-arrived] .constraint__heading {
+  animation-delay: 400ms;
+}
+
+.constraint[data-arrived] .constraint__statement {
+  animation-delay: 800ms;
+}
+
+.constraint[data-arrived] .constraint__behaviour {
+  animation-delay: 1700ms;
+}
+
+.constraint[data-arrived] .constraint__rules::before {
+  animation-name: constraint-divide;
+  animation-delay: 1700ms;
+}
+
+.constraint[data-arrived] .constraint__name {
+  animation-delay: 2700ms;
+}
+
+@keyframes constraint-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(calc(4 * var(--u)));
+  }
+}
+
+@keyframes constraint-divide {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .constraint[data-arrived] .constraint__heading,
+  .constraint[data-arrived] .constraint__statement,
+  .constraint[data-arrived] .constraint__behaviour,
+  .constraint[data-arrived] .constraint__name,
+  .constraint[data-arrived] .constraint__rules::before {
     animation: none;
   }
 }

@@ -130,6 +130,29 @@
   cursor: not-allowed;
 }
 
+/* A smaller control, for a pair that has to fit side by side inside a panel. It has no room for the signal dot. */
+.control--compact {
+  min-height: max(30px, calc(34 * var(--u)));
+  padding: 0 max(8px, calc(12 * var(--u)));
+}
+
+.control--compact::before {
+  content: none;
+}
+
+/*
+ * A control that stays down: a choice that has been made (see `setPressed`).
+ * It is filled, the way a bit set to 1 is, so the choice is told by light and
+ * dark and by `aria-pressed` — not by a hue. Hovering does not lift it.
+ */
+.control[aria-pressed='true'],
+.control[aria-pressed='true']:not(:disabled, [aria-disabled='true']):hover,
+.control[aria-pressed='true']:not(:disabled, [aria-disabled='true']):focus-visible {
+  border-color: var(--color-text-primary);
+  background-color: var(--color-text-primary);
+  color: var(--color-background);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .control:not(:disabled, [aria-disabled='true']):hover,
   .control:not(:disabled, [aria-disabled='true']):focus-visible,

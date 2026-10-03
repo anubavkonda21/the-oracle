@@ -144,6 +144,8 @@
   left: var(--edge-x);
   display: grid;
   grid-template-columns: 1fr auto 1fr;
+  /* Keeps the objective, which can run to two lines in a narrow window, clear of the controls beside it. */
+  column-gap: max(16px, calc(24 * var(--u)));
   align-items: end;
 }
 
@@ -204,6 +206,34 @@
 
 @media (prefers-reduced-motion: reduce) {
   .laboratory__note[data-arrived] {
+    animation: none;
+  }
+}
+
+/*
+ * The constraint the machine is under is printed above the machine it
+ * describes. Its bottom edge keeps a fixed distance from the top of the
+ * machine, and it grows upward from there, into the band between the header's
+ * two corners. It is wider than the machine: the panels on either side start
+ * lower down.
+ */
+.laboratory__constraint {
+  position: absolute;
+  right: 0;
+  bottom: calc(50% - (var(--machine-offset-y) - 172) * var(--u));
+  left: 0;
+  /* Wide enough for each rule to be said on one line. */
+  width: min(100% - 2 * var(--edge-x), max(680px, calc(860 * var(--u))));
+  margin: 0 auto;
+}
+
+/* The objective changing. The new one fades in where the old one was. */
+.panel__text[data-arrived] {
+  animation: note-arrive 520ms var(--ease-precise);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel__text[data-arrived] {
     animation: none;
   }
 }

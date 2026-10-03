@@ -3,11 +3,16 @@ import { DESIGN_HEIGHT } from '../../config/display';
 import { GAME_IDENTITY, LEVEL_COUNT } from '../../config/identity';
 import { INVESTIGATION_COPY } from '../../config/investigationConfig';
 import { MACHINE_CENTER_Y } from '../../config/oracleConfig';
+import { PROMISE_COPY } from '../../config/promiseConfig';
 import type { OracleQuery } from '../../systems/oracle/GameOracle';
 import type { InvestigationProgress } from '../../systems/oracle/Investigation';
 import { toBinaryString, type BinaryInputState } from '../../systems/oracle/binaryInput';
+import { inputSpaceSize } from '../../systems/oracle/inputSpace';
 import type { InvestigationNote } from '../../systems/oracle/investigationNotes';
+import type { OracleKind } from '../../systems/oracle/oracleKind';
 import { createBitInput } from '../components/bitInput';
+import { createClassificationRecord, type ClassificationState } from '../components/classificationRecord';
+import { createConstraintPlate } from '../components/constraintPlate';
 import { createControlButton, setUnavailable } from '../components/controlButton';
 import { createExperimentLog } from '../components/experimentLog';
 import { createInputSpaceMap } from '../components/inputSpaceMap';
@@ -30,6 +35,8 @@ export interface LaboratoryViewOptions {
   /** Whether the player has already observed THE BOX in this session. */
   boxObserved: boolean;
   onOpenBox: () => void;
+  /** The player chose one of the two kinds of machine as their conclusion. */
+  onConclude: (kind: OracleKind) => void;
 }
 
 export interface LaboratoryView {
@@ -61,6 +68,25 @@ export interface LaboratoryView {
    * the player comes back to an investigation already under way.
    */
   showNote(note: InvestigationNote | null, arrive?: boolean): void;
+  /**
+   * Discloses the constraint the machine is under, above the machine. It
+   * arrives part by part and is announced — unless `arrive` is off, when it
+   * is simply there. Until this is called, nothing of it can be seen.
+   */
+  revealPromise(arrive?: boolean): void;
+  /**
+   * Sets the task that follows from the constraint: the objective changes,
+   * and the record gains the evidence that bears on it and a place for the
+   * player's conclusion. This comes after the constraint, once the two kinds
+   * have been described and named.
+   */
+  setClassificationTask(objective: string, arrive?: boolean): void;
+  /**
+   * Draws the evidence, the conclusion on record and how it stands. A change
+   * in the conclusion or in its standing is announced, unless `announceChange`
+   * is off.
+   */
+  renderClassification(state: ClassificationState, announceChange?: boolean): void;
 }
 
 /**
@@ -68,9 +94,13 @@ export interface LaboratoryView {
  * the input console under the machine, the map of the input space on one side
  * and the experiment log on the other, and the HUD around the edges. The
  * middle is left clear for the canvas, where the machine itself is drawn.
+ *
+ * Once the laboratory discloses it, the constraint the machine is under is
+ * printed above the machine.
  */
 export function createLaboratoryView(options: LaboratoryViewOptions): LaboratoryView {
-  const { levelNumber, objective, inputLength, onToggleBit, onFocusBit, onAsk, onReturn, boxObserved, onOpenBox } = options;
+  const { levelNumber, objective, inputLength, onToggleBit, onFocusBit, onAsk, onReturn, boxObserved, onOpenBox, onConclude } =
+    options;
   const titleId = uniqueId('laboratory-title');
   const inputLabelId = uniqueId('input-label');
   const { title } = GAME_IDENTITY;
@@ -118,9 +148,17 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
 
   const noteLine = createElement('p', { className: 'laboratory__note' });
 
+  // What is known about the machine, and what the record says about it. Both are built now and kept out of
+  // sight — and out of reach of the keyboard and of screen readers — until the laboratory discloses them.
+  const constraint = createConstraintPlate(inputSpaceSize(inputLength));
+  constraint.element.hidden = true;
+  const classificationRecord = createClassificationRecord({ onConclude });
+  classificationRecord.element.hidden = true;
+
   const inputSpace = createInputSpaceMap(inputLength);
-  const experimentLog = createExperimentLog();
+  const experimentLog = createExperimentLog(classificationRecord.element);
   const systemStatus = createStatusIndicator('ONLINE');
+  const objectiveText = createElement('p', { className: 'panel__text', text: objective });
 
   // The one place a screen reader is told about things as they happen: a repeated input, and each new remark.
   const announcer = createElement('p', { className: 'visually-hidden', attributes: { role: 'status' } });
@@ -140,10 +178,7 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
   }
 
   const footer = createElement('footer', { className: 'laboratory__footer' }, [
-    createPanel({
-      heading: 'OBJECTIVE',
-      content: [createElement('p', { className: 'panel__text', text: objective })],
-    }),
+    createPanel({ heading: 'OBJECTIVE', content: [objectiveText] }),
     createElement('div', { className: 'laboratory__actions' }, [
       // The other apparatus in the facility. Once it has been observed, the control says so in place of its key hint.
       createControlButton({
@@ -165,6 +200,7 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
   const element = createElement('section', { className: 'view laboratory', attributes: { 'aria-labelledby': titleId } }, [
     header,
     sceneDescription,
+    createElement('div', { className: 'laboratory__constraint' }, [constraint.element]),
     createElement('div', { className: 'laboratory__console' }, [inputConsole, noteLine]),
     createElement('aside', { className: 'laboratory__space' }, [inputSpace.element]),
     createElement('aside', { className: 'laboratory__log' }, [experimentLog.element]),
@@ -241,6 +277,37 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
       if (note && isNewRemark && arrive) {
         restartAnimation(noteLine, 'data-arrived');
         announce(note.text);
+      }
+    },
+
+    revealPromise(arrive = true) {
+      constraint.element.hidden = false;
+      if (arrive) {
+        constraint.arrive();
+        announce(PROMISE_COPY.announcement);
+      }
+    },
+
+    setClassificationTask(newObjective, arrive = true) {
+      objectiveText.textContent = newObjective;
+      classificationRecord.element.hidden = false;
+      if (arrive) {
+        restartAnimation(objectiveText, 'data-arrived');
+        restartAnimation(classificationRecord.element, 'data-arrived');
+        announce(PROMISE_COPY.objectiveAnnouncement(newObjective));
+      }
+    },
+
+    renderClassification(state, announceChange = true) {
+      classificationRecord.render(state);
+
+      // What is worth saying aloud is a change in the conclusion or in how it stands — not a count that has moved on by one.
+      const drawn = `${state.conclusion ?? ''}:${state.standing ?? ''}`;
+      const changed = classificationRecord.element.dataset.drawn !== undefined && classificationRecord.element.dataset.drawn !== drawn;
+      classificationRecord.element.dataset.drawn = drawn;
+
+      if (changed && announceChange) {
+        announce(PROMISE_COPY.conclusion.announcement(state.conclusion, state.evidence));
       }
     },
   };

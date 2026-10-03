@@ -13,7 +13,7 @@ const gameSources = import.meta.glob<string>('../../src/game/**/*.ts', {
  * Ideas the player has not met at any point so far. None of these may appear
  * in anything the player can read, anywhere in the game.
  */
-const NOT_YET_REVEALED = /constant|balanced|deutsch|jozsa|phase|hadamard|qubit/i;
+const NOT_YET_REVEALED = /deutsch|jozsa|phase|hadamard|qubit/i;
 
 /**
  * Ideas THE BOX introduces — but only in its short context, after the player
@@ -22,6 +22,25 @@ const NOT_YET_REVEALED = /constant|balanced|deutsch|jozsa|phase|hadamard|qubit/i
  */
 const INTRODUCED_BY_THE_BOX = /quantum|superposition/i;
 const BOX_COPY_FILE = '/config/boxConfig.ts';
+
+/**
+ * The names of the two kinds of machine. The laboratory introduces them when
+ * it discloses the constraint, and not before — so, as text for the player,
+ * they live in one file, which the interface shows nothing of until then.
+ */
+const INTRODUCED_BY_THE_PROMISE = /constant|balanced/i;
+const PROMISE_COPY_FILE = '/config/promiseConfig.ts';
+
+/**
+ * The same two words are also how the code itself names the kinds — as the
+ * values of a type and in one error message — in the modules that reason
+ * about them. None of these is interface code, and none builds anything the
+ * player sees.
+ */
+const KINDS_AS_CODE = ['/systems/oracle/oracleKind.ts', '/systems/oracle/evidence.ts', '/systems/oracle/promise.ts'];
+
+const mayNameTheKinds = (path: string): boolean =>
+  path.endsWith(PROMISE_COPY_FILE) || KINDS_AS_CODE.some((file) => path.endsWith(file));
 
 const withoutComments = (source: string): string => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
@@ -56,10 +75,14 @@ describe('what the player can read', () => {
       '/LaboratoryScene.ts',
       '/experimentLog.ts',
       '/inputSpaceMap.ts',
+      '/constraintPlate.ts',
+      '/classificationRecord.ts',
       '/config/investigationConfig.ts',
       '/boxView.ts',
       '/BoxScene.ts',
       BOX_COPY_FILE,
+      PROMISE_COPY_FILE,
+      ...KINDS_AS_CODE,
     ]) {
       expect(paths.some((path) => path.endsWith(fileName))).toBe(true);
     }
@@ -83,10 +106,36 @@ describe('what the player can read', () => {
     expect(offendingStrings(INTRODUCED_BY_THE_BOX, (path) => !path.endsWith(BOX_COPY_FILE))).toEqual([]);
   });
 
+  it('keeps the names of the two kinds of machine out of everything except the text of the constraint', () => {
+    expect(offendingStrings(INTRODUCED_BY_THE_PROMISE, (path) => !mayNameTheKinds(path))).toEqual([]);
+  });
+
+  it('never spells those names in the interface itself: scenes, views and components take them from that one file', () => {
+    const interfaceCode = (path: string): boolean => path.includes('/ui/') || path.includes('/scenes/') || path.includes('/entities/');
+
+    expect(Object.keys(gameSources).filter(interfaceCode).length).toBeGreaterThan(15);
+    expect(offendingStrings(INTRODUCED_BY_THE_PROMISE, interfaceCode)).toEqual([]);
+    expect(KINDS_AS_CODE.filter(interfaceCode)).toEqual([]);
+  });
+
+  it('names the two kinds, in the text of the constraint', () => {
+    const promiseText = Object.entries(gameSources)
+      .filter(([path]) => path.endsWith(PROMISE_COPY_FILE))
+      .flatMap(([, source]) => stringLiterals(source));
+
+    expect(promiseText).toContain('CONSTANT');
+    expect(promiseText).toContain('BALANCED');
+    for (const text of promiseText) {
+      expect(text).not.toMatch(NOT_YET_REVEALED);
+      expect(text).not.toMatch(INTRODUCED_BY_THE_BOX);
+    }
+  });
+
   it('contains no such term in the page itself', () => {
     const visibleText = indexHtml.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '');
     expect(visibleText).not.toMatch(NOT_YET_REVEALED);
     expect(visibleText).not.toMatch(INTRODUCED_BY_THE_BOX);
+    expect(visibleText).not.toMatch(INTRODUCED_BY_THE_PROMISE);
   });
 
   it('uses the words the laboratory is meant to show', () => {
@@ -103,6 +152,11 @@ describe('what the player can read', () => {
       'TESTED',
       'UNTESTED',
       'NO QUERY USED',
+      'ORACLE CONSTRAINT',
+      'This machine is guaranteed to obey one of two rules.',
+      'Determine which kind of Oracle you are dealing with.',
+      'OUTPUTS OBSERVED',
+      'CONCLUSION',
     ]) {
       expect(allText).toContain(expected);
     }
@@ -119,6 +173,8 @@ describe('what the player can read', () => {
     for (const text of investigationText) {
       expect(text).not.toMatch(NOT_YET_REVEALED);
       expect(text).not.toMatch(INTRODUCED_BY_THE_BOX);
+      // The remarks start before the constraint is disclosed, so they do not name the kinds either.
+      expect(text).not.toMatch(INTRODUCED_BY_THE_PROMISE);
     }
   });
 });
@@ -170,6 +226,11 @@ describe('what the player reads in THE BOX', () => {
   it('does not yet mention what later checkpoints will reveal', () => {
     expect(everything).not.toMatch(NOT_YET_REVEALED);
     expect(everything).not.toMatch(/kickback|quantum oracle/i);
+  });
+
+  it('says nothing of the machine’s two kinds: the connection between the two rooms is left unspoken', () => {
+    expect(everything).not.toMatch(INTRODUCED_BY_THE_PROMISE);
+    expect(everything).not.toMatch(/oracle constraint|one of two rules|evidence|conclusion/i);
   });
 
   it('names both outcomes, so the result never depends on the picture alone', () => {

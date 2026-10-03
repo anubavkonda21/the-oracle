@@ -1,6 +1,7 @@
 import { formatQueryId } from '../../utils/format';
 import type { OracleQuery } from '../systems/oracle/GameOracle';
 import type { InvestigationProgress } from '../systems/oracle/Investigation';
+import { agreementNeeded } from '../systems/oracle/evidence';
 
 /**
  * What the laboratory says about the investigation, in one place.
@@ -54,6 +55,10 @@ export interface InvestigationNoteRule {
  * while; is there a better way to ask? — and they are spaced so that the last
  * of those is reached within about a dozen queries. Each one is true for as
  * long as it is shown.
+ *
+ * Part-way through, at the remark that the machine "is still unknown", the
+ * laboratory discloses the one thing that is known about it (promiseConfig.ts).
+ * The remarks after that are about telling the two kinds apart.
  */
 export const INVESTIGATION_NOTES: readonly InvestigationNoteRule[] = [
   {
@@ -74,8 +79,11 @@ export const INVESTIGATION_NOTES: readonly InvestigationNoteRule[] = [
     text: ({ queryCount }) => `${queryCount} answers on record. What the machine does is still unknown.`,
   },
   {
+    // By now the laboratory has disclosed that the machine is one of two kinds (see promiseConfig.ts),
+    // so the cost that matters is the cost of being sure which: more than half of all inputs, at worst.
     fromQuery: () => 11,
-    text: ({ inputSpaceSize }) => `One input at a time, a complete record would take ${inputSpaceSize} queries.`,
+    text: ({ inputSpaceSize }) =>
+      `One input at a time, certainty can take as many as ${agreementNeeded(inputSpaceSize)} queries.`,
   },
   {
     fromQuery: () => 14,

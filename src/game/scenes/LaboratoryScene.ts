@@ -1,8 +1,10 @@
 import { DESIGN_WIDTH } from '../config/display';
 import { MACHINE_CENTER_Y, ORACLE_TIMING } from '../config/oracleConfig';
+import { PROMISE_COPY, PROMISE_TIMING } from '../config/promiseConfig';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { prefersReducedMotion } from '../effects/motion';
 import { OracleMachine } from '../entities/OracleMachine';
+import { Classification, promiseIsRevealed } from '../systems/oracle/Classification';
 import type { OracleQuery } from '../systems/oracle/GameOracle';
 import { Investigation } from '../systems/oracle/Investigation';
 import {
@@ -17,6 +19,7 @@ import {
 } from '../systems/oracle/binaryInput';
 import { investigationNote } from '../systems/oracle/investigationNotes';
 import { listenForKeyPresses } from '../systems/keyboard';
+import type { OracleKind } from '../systems/oracle/oracleKind';
 import { createPrototypeOracle } from '../systems/oracle/prototypeOracle';
 import { createLaboratoryView, type LaboratoryView } from '../ui/views/laboratoryView';
 import { StageScene } from './StageScene';
@@ -36,22 +39,32 @@ interface LaboratoryEntry {
  * An input that is already on record is answered from the record: the machine
  * is not asked again and no query is used.
  *
- * This scene only connects the pieces. The machine's logic and the
- * investigation's are in systems/oracle, the machine's appearance in
- * entities/OracleMachine, and the controls in ui/views/laboratoryView.
+ * Part-way through, the laboratory discloses the one thing known about the
+ * machine — that it is one of two kinds — and the task becomes telling which.
+ * From then on the record also shows the evidence that bears on that, and the
+ * player can put a conclusion on record. The laboratory says how a conclusion
+ * stands against the evidence; it cannot say whether it is right, because
+ * nothing here knows which kind the machine is.
  *
- * There is no objective to complete, no conclusion for the player to submit
- * and no level progression yet. Nothing here asks the player to work out the
- * machine's rule.
+ * This scene only connects the pieces. The machine's logic, the
+ * investigation's and the classification's are in systems/oracle, the
+ * machine's appearance in entities/OracleMachine, and the controls in
+ * ui/views/laboratoryView.
+ *
+ * Nothing is graded, nothing ends, and there is no level progression yet.
+ * Nothing here asks the player to work out the machine's rule.
  */
 export class LaboratoryScene extends StageScene {
   private investigation!: Investigation;
+  private classification!: Classification;
   private machine!: OracleMachine;
   private view!: LaboratoryView;
   private binaryInput!: BinaryInputState;
   private isProcessing = false;
   /** False until the laboratory has been entered once, after which there is an experiment to resume. */
   private hasExperiment = false;
+  /** True once the constraint has been put on screen in this visit to the laboratory, so that it is disclosed once. */
+  private promiseShown = false;
 
   constructor() {
     super(SCENE_KEYS.laboratory);
@@ -63,13 +76,16 @@ export class LaboratoryScene extends StageScene {
     const resuming = entry?.resume === true && this.hasExperiment;
     if (!resuming) {
       this.investigation = new Investigation(createPrototypeOracle());
+      this.classification = new Classification(this.investigation);
       this.binaryInput = createBinaryInput(this.investigation.inputLength);
     }
     this.hasExperiment = true;
     this.isProcessing = false;
+    this.promiseShown = false;
 
     this.view = createLaboratoryView({
       levelNumber: 1,
+      // The question the investigation opens with. Once the constraint is disclosed, a sharper one takes its place.
       objective: 'Find out what the machine does.',
       inputLength: this.investigation.inputLength,
       onToggleBit: (index) => this.editInput(toggleBit(this.binaryInput, index)),
@@ -78,6 +94,7 @@ export class LaboratoryScene extends StageScene {
       onReturn: () => this.returnToMenu(),
       boxObserved: this.session.hasObservedBox,
       onOpenBox: () => this.openBox(),
+      onConclude: (kind) => this.conclude(kind),
     });
     this.enterStage(this.view.element);
 
@@ -176,11 +193,61 @@ export class LaboratoryScene extends StageScene {
     return this.investigation.find(toBinaryString(this.binaryInput)) ?? null;
   }
 
-  /** Draws the counts, and whatever the laboratory has to remark at this point in the investigation. */
+  /**
+   * Draws the counts, whatever the laboratory has to remark at this point in
+   * the investigation, and the evidence. If the investigation has reached
+   * the point where the constraint is disclosed, discloses it.
+   */
   private showProgress(arrive = true): void {
     const progress = this.investigation.progress;
     this.view.renderProgress(progress);
     this.view.showNote(investigationNote(progress), arrive);
+    this.drawClassification(arrive);
+
+    if (promiseIsRevealed(progress) && !this.promiseShown) {
+      this.promiseShown = true;
+      this.disclosePromise(arrive);
+    }
+  }
+
+  /**
+   * Discloses the constraint, and then sets the task that follows from it.
+   *
+   * The task waits until the constraint has finished arriving — until the
+   * two kinds have been described and named — so the player is not asked to
+   * choose between two words before being told what they mean. With `arrive`
+   * off, as when the player returns to an investigation that had already got
+   * this far, both are simply there.
+   */
+  private disclosePromise(arrive: boolean): void {
+    this.view.revealPromise(arrive);
+    if (!arrive) {
+      this.view.setClassificationTask(PROMISE_COPY.objective, false);
+      return;
+    }
+    const wait = prefersReducedMotion() ? PROMISE_TIMING.reducedMotionObjectiveDelayMs : PROMISE_TIMING.objectiveDelayMs;
+    this.afterDelay(wait, () => this.view.setClassificationTask(PROMISE_COPY.objective));
+  }
+
+  /** Draws the evidence, the conclusion on record and how that conclusion stands against the evidence. */
+  private drawClassification(announceChange = true): void {
+    this.view.renderClassification(
+      {
+        evidence: this.classification.evidence,
+        conclusion: this.classification.conclusion,
+        standing: this.classification.standing,
+      },
+      announceChange,
+    );
+  }
+
+  /** The player puts a conclusion on record, or takes back the one that is there. No query is used, and nothing is graded. */
+  private conclude(kind: OracleKind): void {
+    if (this.isLeavingStage) {
+      return;
+    }
+    this.classification.conclude(kind);
+    this.drawClassification();
   }
 
   private ask(): void {
