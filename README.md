@@ -35,7 +35,7 @@ The game is built in numbered checkpoints, one commit each. Every checkpoint lea
 
 | [06 — Classical Investigation](#checkpoint-06--classical-investigation) | [`b1a7b9a`](https://github.com/anubavkonda21/the-oracle/commit/b1a7b9abafbf6f889a3280f0fbe72e78271e50c7) `feat: add the classical investigation` | The investigation and its record; the map of the input space; repeated inputs answered from the record, using no query; the laboratory's remarks as the queries add up. | 659 |
 
-| [07 — The Promise](#checkpoint-07--the-promise) | `feat: add the promise and the classification objective` | The promise, checked against the hidden function; the constraint disclosed in the laboratory; a classifier that reasons from the record alone; the classification objective and a conclusion on record. | 832 |
+| [07 — The Promise](#checkpoint-07--the-promise) | [`834f375`](https://github.com/anubavkonda21/the-oracle/commit/834f375b0a9de8b10874ab3f21eb1e4971200ed0) `feat: add the promise and the classification objective` | The promise, checked against the hidden function; the constraint disclosed in the laboratory; a classifier that reasons from the record alone; the classification objective and a conclusion on record. | 832 |
 
 Still to come: quantum mode, quantum visuals, story and sound. Commits that only touch documentation are not listed here; the complete log is on the [commits page](https://github.com/anubavkonda21/the-oracle/commits/main).
 
