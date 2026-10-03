@@ -24,6 +24,16 @@ export function createElement<Tag extends keyof HTMLElementTagNameMap>(
   return element;
 }
 
+/**
+ * Sets an attribute afresh, so that a CSS animation keyed to it runs again
+ * even if the attribute was already there.
+ */
+export function restartAnimation(element: HTMLElement, attribute: string): void {
+  element.removeAttribute(attribute);
+  void element.offsetWidth; // Reading a layout value makes the browser register the removal before the attribute returns.
+  element.setAttribute(attribute, '');
+}
+
 let nextId = 0;
 
 /** Document-unique id, for wiring `aria-labelledby` between generated elements. */

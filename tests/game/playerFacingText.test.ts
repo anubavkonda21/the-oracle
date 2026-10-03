@@ -51,7 +51,16 @@ describe('what the player can read', () => {
   it('finds the game sources to check', () => {
     const paths = Object.keys(gameSources);
     expect(paths.length).toBeGreaterThan(30);
-    for (const fileName of ['/laboratoryView.ts', '/LaboratoryScene.ts', '/boxView.ts', '/BoxScene.ts', BOX_COPY_FILE]) {
+    for (const fileName of [
+      '/laboratoryView.ts',
+      '/LaboratoryScene.ts',
+      '/experimentLog.ts',
+      '/inputSpaceMap.ts',
+      '/config/investigationConfig.ts',
+      '/boxView.ts',
+      '/BoxScene.ts',
+      BOX_COPY_FILE,
+    ]) {
       expect(paths.some((path) => path.endsWith(fileName))).toBe(true);
     }
   });
@@ -82,8 +91,34 @@ describe('what the player can read', () => {
 
   it('uses the words the laboratory is meant to show', () => {
     const allText = Object.values(gameSources).flatMap(stringLiterals);
-    for (const expected of ['ASK', 'INPUT', 'EXPERIMENT LOG', 'QUERIES', 'OUTPUT', 'PROCESSING', 'Find out what the machine does.']) {
+    for (const expected of [
+      'ASK',
+      'INPUT',
+      'EXPERIMENT LOG',
+      'QUERIES USED',
+      'OUTPUT',
+      'PROCESSING',
+      'Find out what the machine does.',
+      'INPUT SPACE',
+      'TESTED',
+      'UNTESTED',
+      'NO QUERY USED',
+    ]) {
       expect(allText).toContain(expected);
+    }
+  });
+
+  it('reads the remarks on the investigation too, which are assembled from pieces', () => {
+    // The remarks are template strings with numbers filled in. Their fixed words are what must be checked.
+    const investigationText = Object.entries(gameSources)
+      .filter(([path]) => path.endsWith('/config/investigationConfig.ts'))
+      .flatMap(([, source]) => stringLiterals(source));
+
+    expect(investigationText).toContain('There may be a better way to ask.');
+    expect(investigationText.some((text) => text.includes('possible inputs'))).toBe(true);
+    for (const text of investigationText) {
+      expect(text).not.toMatch(NOT_YET_REVEALED);
+      expect(text).not.toMatch(INTRODUCED_BY_THE_BOX);
     }
   });
 });

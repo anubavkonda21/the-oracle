@@ -1,15 +1,22 @@
 import { formatCounter } from '../../../utils/format';
 import { DESIGN_HEIGHT } from '../../config/display';
 import { GAME_IDENTITY, LEVEL_COUNT } from '../../config/identity';
+import { INVESTIGATION_COPY } from '../../config/investigationConfig';
 import { MACHINE_CENTER_Y } from '../../config/oracleConfig';
 import type { OracleQuery } from '../../systems/oracle/GameOracle';
-import type { BinaryInputState } from '../../systems/oracle/binaryInput';
+import type { InvestigationProgress } from '../../systems/oracle/Investigation';
+import { toBinaryString, type BinaryInputState } from '../../systems/oracle/binaryInput';
+import type { InvestigationNote } from '../../systems/oracle/investigationNotes';
 import { createBitInput } from '../components/bitInput';
 import { createControlButton, setUnavailable } from '../components/controlButton';
 import { createExperimentLog } from '../components/experimentLog';
+import { createInputSpaceMap } from '../components/inputSpaceMap';
 import { createPanel } from '../components/panel';
 import { createStatusIndicator, setStatusLabel } from '../components/statusIndicator';
-import { createElement, uniqueId } from '../dom';
+import { createElement, restartAnimation, uniqueId } from '../dom';
+
+/** How long an announcement stays in the page: long enough for a screen reader to have picked it up. */
+const ANNOUNCEMENT_LIFETIME_MS = 4000;
 
 export interface LaboratoryViewOptions {
   /** 1-based level number shown in the progression indicator. */
@@ -27,29 +34,47 @@ export interface LaboratoryViewOptions {
 
 export interface LaboratoryView {
   readonly element: HTMLElement;
-  /** Draws the binary input the player is composing. */
-  renderInput(state: BinaryInputState): void;
+  /**
+   * Draws the binary input the player is composing, and what the record
+   * already holds for it: the entry of the query that tested it, or `null`
+   * if it is untested.
+   */
+  renderInput(state: BinaryInputState, recorded: OracleQuery | null): void;
   /** Moves keyboard focus to follow the typing cursor, but only if focus is already inside the input. */
   followCursor(state: BinaryInputState): void;
   /** True when keyboard focus is on one of the input's bits. */
   inputHasFocus(): boolean;
   /** While the machine is working, the input and the ask control cannot be used. */
   setProcessing(processing: boolean): void;
-  /** Adds an answered query to the experiment log. */
-  recordQuery(query: OracleQuery): void;
+  /** Adds an answered query to the record: the experiment log and the input space. With `animate` off it is simply there. */
+  recordQuery(query: OracleQuery, animate?: boolean): void;
+  /** Draws the counts: queries used, and inputs tested and untested. */
+  renderProgress(progress: InvestigationProgress): void;
+  /**
+   * The player asked about an input that is already on record. Points to the
+   * entry and says that no query was used; the machine is not involved.
+   */
+  showRecalled(query: OracleQuery): void;
+  /**
+   * Shows the laboratory's remark on the investigation, or none. A new remark
+   * arrives — it fades in and is announced — unless `arrive` is off, as when
+   * the player comes back to an investigation already under way.
+   */
+  showNote(note: InvestigationNote | null, arrive?: boolean): void;
 }
 
 /**
  * The laboratory interface (layout: `.laboratory` in views.css and oracle.css):
- * the input console under the machine, the experiment log beside it, and the
- * HUD around the edges. The middle is left clear for the canvas, where the
- * machine itself is drawn.
+ * the input console under the machine, the map of the input space on one side
+ * and the experiment log on the other, and the HUD around the edges. The
+ * middle is left clear for the canvas, where the machine itself is drawn.
  */
 export function createLaboratoryView(options: LaboratoryViewOptions): LaboratoryView {
   const { levelNumber, objective, inputLength, onToggleBit, onFocusBit, onAsk, onReturn, boxObserved, onOpenBox } = options;
   const titleId = uniqueId('laboratory-title');
   const inputLabelId = uniqueId('input-label');
   const { title } = GAME_IDENTITY;
+  const { record } = INVESTIGATION_COPY;
 
   const header = createElement('header', { className: 'laboratory__header' }, [
     createElement('h1', {
@@ -67,7 +92,7 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
   // The canvas is hidden from assistive technology, so the scene is described in words.
   const sceneDescription = createElement('p', {
     className: 'visually-hidden',
-    text: 'A matte black machine with a single circular aperture stands in the centre of the laboratory. Its answer to each input appears in the aperture and in the experiment log.',
+    text: 'A matte black machine with a single circular aperture stands in the centre of the laboratory. Its answer to each input appears in the aperture and in the experiment log. A map of the input space shows which of the possible inputs have been tested.',
   });
 
   const bitInput = createBitInput({
@@ -82,14 +107,37 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
     onActivate: onAsk,
     shortcut: { label: 'ENTER', ariaKey: 'Enter' },
   });
+  // What the record holds for the input as it stands. It changes with every digit, so it is not a live region.
+  const recordLine = createElement('p', { className: 'readout console__record', text: record.untested });
   const inputConsole = createElement('div', { className: 'console' }, [
     createElement('p', { className: 'readout console__label', text: 'INPUT', attributes: { id: inputLabelId } }),
     bitInput.element,
     askButton,
+    recordLine,
   ]);
 
+  const noteLine = createElement('p', { className: 'laboratory__note' });
+
+  const inputSpace = createInputSpaceMap(inputLength);
   const experimentLog = createExperimentLog();
   const systemStatus = createStatusIndicator('ONLINE');
+
+  // The one place a screen reader is told about things as they happen: a repeated input, and each new remark.
+  const announcer = createElement('p', { className: 'visually-hidden', attributes: { role: 'status' } });
+
+  /**
+   * Says something once. The words are taken away again shortly afterwards:
+   * left in the page they would go stale — the visible text they repeat moves
+   * on — and would be read a second time by anyone reading the page through.
+   */
+  function announce(message: string): void {
+    announcer.textContent = message;
+    window.setTimeout(() => {
+      if (announcer.textContent === message) {
+        announcer.textContent = '';
+      }
+    }, ANNOUNCEMENT_LIFETIME_MS);
+  }
 
   const footer = createElement('footer', { className: 'laboratory__footer' }, [
     createPanel({
@@ -117,9 +165,11 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
   const element = createElement('section', { className: 'view laboratory', attributes: { 'aria-labelledby': titleId } }, [
     header,
     sceneDescription,
-    createElement('div', { className: 'laboratory__console' }, [inputConsole]),
+    createElement('div', { className: 'laboratory__console' }, [inputConsole, noteLine]),
+    createElement('aside', { className: 'laboratory__space' }, [inputSpace.element]),
     createElement('aside', { className: 'laboratory__log' }, [experimentLog.element]),
     footer,
+    announcer,
   ]);
   // The console sits a fixed distance below the machine, wherever the scene places the machine.
   element.style.setProperty('--machine-offset-y', String(MACHINE_CENTER_Y - DESIGN_HEIGHT / 2));
@@ -127,8 +177,14 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
   return {
     element,
 
-    renderInput(state) {
+    renderInput(state, recorded) {
       bitInput.render(state);
+      // The same input, seen three ways: as bits, as a place in the input space, and as an entry in the log.
+      inputSpace.setCursor(toBinaryString(state));
+      experimentLog.setCurrent(recorded);
+
+      recordLine.textContent = recorded ? record.tested(recorded) : record.untested;
+      recordLine.removeAttribute('data-recalled');
     },
 
     followCursor(state) {
@@ -152,8 +208,40 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
       setStatusLabel(systemStatus, processing ? 'PROCESSING' : 'ONLINE');
     },
 
-    recordQuery(query) {
+    recordQuery(query, animate = true) {
       experimentLog.add(query);
+      inputSpace.mark(query, animate);
+    },
+
+    renderProgress(progress) {
+      experimentLog.renderCount(progress.queryCount);
+      inputSpace.renderProgress(progress);
+    },
+
+    showRecalled(query) {
+      // Two phrases, each kept whole: in a window too narrow for one line, the break falls between them.
+      recordLine.replaceChildren(
+        createElement('span', { text: `${record.tested(query)} ·` }),
+        ' ',
+        createElement('span', { text: record.noQueryUsed }),
+      );
+      restartAnimation(recordLine, 'data-recalled');
+      experimentLog.recall(query);
+      announce(record.recalledAnnouncement(query));
+    },
+
+    showNote(note, arrive = true) {
+      const stage = note ? String(note.stage) : '';
+      const isNewRemark = noteLine.dataset.stage !== stage;
+
+      noteLine.dataset.stage = stage;
+      noteLine.textContent = note?.text ?? '';
+
+      // A remark whose numbers have merely kept up with the record has not arrived again.
+      if (note && isNewRemark && arrive) {
+        restartAnimation(noteLine, 'data-arrived');
+        announce(note.text);
+      }
     },
   };
 }

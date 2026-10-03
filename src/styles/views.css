@@ -171,13 +171,59 @@
   right: 0;
   left: 0;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* The experiment log runs down the right-hand side, starting level with the top of the machine. */
+/*
+ * The laboratory's remark on the investigation: one quiet line beneath the
+ * console, in the human voice. It follows the console in the flow, so it
+ * stays clear of it however tall the console is in a small window.
+ */
+.laboratory__note {
+  max-width: max(320px, calc(540 * var(--u)));
+  margin-top: calc(30 * var(--u));
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  text-align: center;
+  /* Even line lengths, should it ever run to two lines. */
+  text-wrap: balance;
+}
+
+/* A new remark arrives. A CSS animation runs on real time, so the text is fully shown on schedule even if frames are dropped. */
+.laboratory__note[data-arrived] {
+  animation: note-arrive 520ms var(--ease-precise);
+}
+
+@keyframes note-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(calc(4 * var(--u)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .laboratory__note[data-arrived] {
+    animation: none;
+  }
+}
+
+/*
+ * The record flanks the machine: the map of the input space down the
+ * left-hand side and the experiment log down the right, both starting level
+ * with the top of the machine.
+ */
+.laboratory__space,
 .laboratory__log {
   position: absolute;
   top: calc(50% + (var(--machine-offset-y) - 150) * var(--u));
-  right: var(--edge-x);
   width: max(236px, calc(296 * var(--u)));
+}
+
+.laboratory__space {
+  left: var(--edge-x);
+}
+
+.laboratory__log {
+  right: var(--edge-x);
 }

@@ -3,7 +3,8 @@ import { MACHINE_CENTER_Y, ORACLE_TIMING } from '../config/oracleConfig';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { prefersReducedMotion } from '../effects/motion';
 import { OracleMachine } from '../entities/OracleMachine';
-import type { GameOracle, OracleQuery } from '../systems/oracle/GameOracle';
+import type { OracleQuery } from '../systems/oracle/GameOracle';
+import { Investigation } from '../systems/oracle/Investigation';
 import {
   createBinaryInput,
   eraseBit,
@@ -14,6 +15,7 @@ import {
   typeBit,
   type BinaryInputState,
 } from '../systems/oracle/binaryInput';
+import { investigationNote } from '../systems/oracle/investigationNotes';
 import { listenForKeyPresses } from '../systems/keyboard';
 import { createPrototypeOracle } from '../systems/oracle/prototypeOracle';
 import { createLaboratoryView, type LaboratoryView } from '../ui/views/laboratoryView';
@@ -26,19 +28,24 @@ interface LaboratoryEntry {
 }
 
 /**
- * The laboratory: the first playable loop. The player composes a binary
+ * The laboratory: the classical investigation. The player composes a binary
  * input, asks the machine, watches it work, and reads its one-bit answer,
- * which is added to the experiment log. Then again.
+ * which goes on record. Then again — and the record shows, query by query,
+ * how little of the input space each answer covers.
  *
- * This scene only connects the pieces. The machine's logic is in
- * systems/oracle, its appearance in entities/OracleMachine, and the controls
- * in ui/views/laboratoryView.
+ * An input that is already on record is answered from the record: the machine
+ * is not asked again and no query is used.
  *
- * PROTOTYPE: there is no objective to complete, no conclusion for the player
- * to submit and no level progression yet.
+ * This scene only connects the pieces. The machine's logic and the
+ * investigation's are in systems/oracle, the machine's appearance in
+ * entities/OracleMachine, and the controls in ui/views/laboratoryView.
+ *
+ * There is no objective to complete, no conclusion for the player to submit
+ * and no level progression yet. Nothing here asks the player to work out the
+ * machine's rule.
  */
 export class LaboratoryScene extends StageScene {
-  private oracle!: GameOracle;
+  private investigation!: Investigation;
   private machine!: OracleMachine;
   private view!: LaboratoryView;
   private binaryInput!: BinaryInputState;
@@ -51,12 +58,12 @@ export class LaboratoryScene extends StageScene {
   }
 
   create(entry?: LaboratoryEntry): void {
-    // Coming back from THE BOX, the machine, its log and the input are as they were left.
-    // Coming from the main menu, everything starts fresh: an empty log and the same fixed behaviour.
+    // Coming back from THE BOX, the machine, its record and the input are as they were left.
+    // Coming from the main menu, everything starts fresh: an empty record and the same fixed machine.
     const resuming = entry?.resume === true && this.hasExperiment;
     if (!resuming) {
-      this.oracle = createPrototypeOracle();
-      this.binaryInput = createBinaryInput(this.oracle.inputLength);
+      this.investigation = new Investigation(createPrototypeOracle());
+      this.binaryInput = createBinaryInput(this.investigation.inputLength);
     }
     this.hasExperiment = true;
     this.isProcessing = false;
@@ -64,7 +71,7 @@ export class LaboratoryScene extends StageScene {
     this.view = createLaboratoryView({
       levelNumber: 1,
       objective: 'Find out what the machine does.',
-      inputLength: this.oracle.inputLength,
+      inputLength: this.investigation.inputLength,
       onToggleBit: (index) => this.editInput(toggleBit(this.binaryInput, index)),
       onFocusBit: (index) => this.placeCursor(setCursor(this.binaryInput, index)),
       onAsk: () => this.ask(),
@@ -73,19 +80,21 @@ export class LaboratoryScene extends StageScene {
       onOpenBox: () => this.openBox(),
     });
     this.enterStage(this.view.element);
-    this.view.renderInput(this.binaryInput);
 
     this.machine = new OracleMachine(this, DESIGN_WIDTH / 2, MACHINE_CENTER_Y);
 
-    // The view and the machine are rebuilt on every entry, so a resumed experiment is drawn back into them.
-    const history = this.oracle.history;
-    for (const query of history) {
-      this.view.recordQuery(query);
+    // The view and the machine are rebuilt on every entry, so an investigation under way is drawn
+    // back into them as it stands, without the ceremony of each answer arriving again.
+    const record = this.investigation.record;
+    for (const query of record) {
+      this.view.recordQuery(query, false);
     }
-    const lastQuery = history[history.length - 1];
+    const lastQuery = record[record.length - 1];
     if (lastQuery) {
       this.machine.showAnswer(lastQuery.output, false);
     }
+    this.showProgress(false);
+    this.drawInput();
 
     listenForKeyPresses(this, (event) => this.handleKey(event));
   }
@@ -143,15 +152,50 @@ export class LaboratoryScene extends StageScene {
       return;
     }
     this.binaryInput = next;
-    this.view.renderInput(next);
+    this.drawInput();
     this.view.followCursor(next);
+  }
+
+  /** Draws the input as it stands, together with what the record already holds for it. */
+  private drawInput(): void {
+    this.view.renderInput(this.binaryInput, this.recordedAnswer());
+  }
+
+  /**
+   * The record's entry for the input as it stands, or `null` if it is untested.
+   *
+   * While the machine is working, the query it is working on is already in
+   * the record — but its answer has not been shown yet, and must not appear
+   * early. The input cannot change during that time, so it is that query's
+   * input, and is treated as untested until the machine answers.
+   */
+  private recordedAnswer(): OracleQuery | null {
+    if (this.isProcessing) {
+      return null;
+    }
+    return this.investigation.find(toBinaryString(this.binaryInput)) ?? null;
+  }
+
+  /** Draws the counts, and whatever the laboratory has to remark at this point in the investigation. */
+  private showProgress(arrive = true): void {
+    const progress = this.investigation.progress;
+    this.view.renderProgress(progress);
+    this.view.showNote(investigationNote(progress), arrive);
   }
 
   private ask(): void {
     if (this.isProcessing || this.isLeavingStage) {
       return;
     }
-    const query = this.oracle.query(toBinaryString(this.binaryInput));
+
+    const outcome = this.investigation.ask(toBinaryString(this.binaryInput));
+    if (outcome.kind === 'recalled') {
+      // Already on record. The machine is not asked again, nothing is counted, and nothing waits.
+      this.restartTyping();
+      this.view.showRecalled(outcome.query);
+      return;
+    }
+    const { query } = outcome;
 
     this.isProcessing = true;
     this.view.setProcessing(true);
@@ -166,13 +210,20 @@ export class LaboratoryScene extends StageScene {
     this.view.recordQuery(query);
     this.view.setProcessing(false);
     this.isProcessing = false;
+    this.showProgress();
+    this.restartTyping();
+  }
 
-    // The bits stay as they are, so the player can change one and ask again. Typing starts over from
-    // the left — unless the keyboard is on a particular bit, in which case the cursor stays with it.
+  /**
+   * Once a question has been dealt with — answered by the machine, or found in the record — the
+   * bits stay as they are, so the player can change one and ask again. Typing starts over from the
+   * left, unless the keyboard is on a particular bit, in which case the cursor stays with it.
+   */
+  private restartTyping(): void {
     if (!this.view.inputHasFocus()) {
       this.binaryInput = setCursor(this.binaryInput, 0);
     }
-    this.view.renderInput(this.binaryInput);
+    this.drawInput();
   }
 
   private returnToMenu(): void {

@@ -7,12 +7,13 @@ A browser-playable mystery game for the Quriosity quantum game-development compe
 
 ## Status
 
-**Checkpoint 05 — The Box.** Beside the playable Oracle there is now a short detour, THE BOX: the player's first direct experience of a quantum measurement, made before any of it is explained. There is deliberately **no investigation to complete, no quantum mode for the Oracle, no story and no sound yet**; `src/story/`, `src/data/` and `src/audio/` are empty placeholders for later checkpoints.
+**Checkpoint 06 — Classical Investigation.** The laboratory is now an investigation: the player questions the machine one input at a time, and the laboratory keeps the record, shows how much of the input space is still untested, and never spends a query on an input it has already asked. The player is left to notice, unprompted, how slowly this goes. There is deliberately **no other way of asking yet, nothing to submit, no quantum mode for the Oracle, no story and no sound**; `src/story/`, `src/data/` and `src/audio/` are empty placeholders for later checkpoints.
 
 What exists today:
 
 - Main menu → `ENTER` → the laboratory → `ESC` / `RETURN` back to the menu
 - A playable loop in the laboratory: binary input → ask → processing → output → experiment log (see [Checkpoint 04](#checkpoint-04--first-playable-oracle-prototype))
+- The classical investigation built on that loop: a map of all 64 possible inputs, a record that can be consulted, repeated inputs that use no query, and remarks that grow more pointed as the queries add up (see [Checkpoint 06](#checkpoint-06--classical-investigation))
 - THE BOX: a sealed box, one action — OBSERVE — and one definite outcome, measured on the real state-vector engine (see [Checkpoint 05](#checkpoint-05--the-box))
 - A design system (colour, type, motion tokens) shared by CSS and canvas code
 - A responsive 1440 × 900 stage that scales to the window and stays sharp on high-density screens
@@ -31,7 +32,9 @@ The game is built in numbered checkpoints, one commit each. Every checkpoint lea
 | [04 — First Playable Oracle Prototype](#checkpoint-04--first-playable-oracle-prototype) | [`cc1f928`](https://github.com/anubavkonda21/the-oracle/commit/cc1f928cd2fe551ff337c719010d6e1c6079c4eb) `feat: add first playable oracle prototype` | The game-level Oracle; the 6-bit input; the machine's processing and answer; the experiment log. | 478 |
 | [05 — The Box](#checkpoint-05--the-box) | [`9c50cf9`](https://github.com/anubavkonda21/the-oracle/commit/9c50cf9e422db261975647672520c3799ccaf2da) `feat: add The Box, an experiential introduction to measurement` | THE BOX scene; a single-qubit superposition measured by the engine; the dark room; session tracking; the way from the laboratory and back. | 532 |
 
-Still to come: the full investigation, quantum mode, quantum visuals, story and sound. Commits that only touch documentation are not listed here; the complete log is on the [commits page](https://github.com/anubavkonda21/the-oracle/commits/main).
+| [06 — Classical Investigation](#checkpoint-06--classical-investigation) | `feat: add the classical investigation` | The investigation and its record; the map of the input space; repeated inputs answered from the record, using no query; the laboratory's remarks as the queries add up. | 659 |
+
+Still to come: the reveal of what the machine is promised to be, quantum mode, quantum visuals, story and sound. Commits that only touch documentation are not listed here; the complete log is on the [commits page](https://github.com/anubavkonda21/the-oracle/commits/main).
 
 ## Stack
 
@@ -72,7 +75,8 @@ src/
 │   ├── scenes/             Boot → Preload → MainMenu ⇄ Laboratory ⇄ Box
 │   ├── entities/           things on the canvas (the machine, the box)
 │   ├── systems/            shared services, session, keyboard, font loading, desktop gate
-│   │   ├── oracle/         the machine's game logic: the Oracle, the input model, the prototype rule
+│   │   ├── oracle/         the machine's game logic: the Oracle, the input model, the prototype rule,
+│   │   │                   and the investigation of it — the record, the input space, the remarks
 │   │   └── box/            THE BOX's logic: one qubit, prepared and measured on the quantum engine
 │   ├── ui/                 the HTML layer: components and per-scene views
 │   └── effects/            paper grain, scene fade, stage environment, motion preference
@@ -82,7 +86,8 @@ src/
 ├── utils/                  small pure helpers
 └── story/ data/ audio/     reserved for later checkpoints
 tests/
-├── game/                   tokens, display maths, paper grain, the game Oracle, input model, THE BOX, session, player-facing text
+├── game/                   tokens, display maths, paper grain, the game Oracle, input model, the investigation,
+│                           the input space, the remarks, THE BOX, session, player-facing text
 ├── quantum/                complex numbers, states, gates, measurement, oracle, Deutsch–Jozsa, independence
 └── utils/                  colour, formatting, seeded random
 ```
@@ -379,6 +384,86 @@ It does not mention Hadamard gates, phase, the quantum oracle, Deutsch–Jozsa, 
 - **Leaving and returning** — a box abandoned mid-observation is sealed and fair on re-entry; the Oracle's record is untouched; the laboratory resumes only when THE BOX asks it to.
 - **The text** — nothing is explained before the player acts, and the context makes none of the claims it must not make.
 
+## Checkpoint 06 — Classical Investigation
+
+The laboratory becomes an investigation. The player still asks the machine about one input at a time, exactly as in Checkpoint 04, but the laboratory now keeps a proper record, shows how much of the input space that record leaves untouched, and never spends a query on a question it can already answer.
+
+Nothing is explained. The aim is for the player to arrive, on their own, at the thought *"I've asked the machine several questions… but I still don't really know what it does"* — and then at *"how am I supposed to find out efficiently?"* That question is what a later checkpoint answers.
+
+**Not here yet, on purpose:** any other way of asking. There is no quantum mode, nothing to classify or submit, and no reveal. The words *constant*, *balanced*, *phase*, *Hadamard* and *Deutsch–Jozsa* still appear nowhere the player can read, and the player is never asked to work out the machine's rule.
+
+### What the laboratory shows
+
+| Part | What it is |
+| --- | --- |
+| **Input space** | A panel beside the machine: `6 BITS`, `64 POSSIBLE INPUTS`, and an 8 × 8 map with one cell for every input, in counting order from `000000` (top left) to `111111` (bottom right). A cell is an empty outline until its input has been tested, and from then on shows the answer the way a bit of the input does — open for 0, filled for 1, with the digit printed in both. Four corner marks show the cell of the input being composed. Beneath it, `TESTED` and `UNTESTED` counts. |
+| **Record line** | Under the input: `UNTESTED`, or `TESTED · QUERY_003 · OUTPUT 1`. It follows the input digit by digit, so the record can be consulted by dialling an input, without asking anything. |
+| **Experiment log** | The same log, now the investigation's record. Its count reads `QUERIES USED`; the entry for the input being composed is ringed and tinted; an entry can be recalled (see below); and the column headings carry a rule, so entries scroll cleanly beneath them. |
+| **Remarks** | One quiet line under the console that changes as the queries add up (see below). |
+
+The input is shown three ways at once — as bits, as a place in the input space and as an entry in the log — and the three move together.
+
+### A repeated input uses no query
+
+When the player asks about an input that is already on record:
+
+- the machine is **not asked**. It shows no activity, there is no processing wait, and the aperture keeps the last answer the machine actually gave;
+- `QUERIES USED` does not change;
+- the record line gains `· NO QUERY USED` and steps forward, the log scrolls to the original entry and marks it, and a screen reader is told in a sentence.
+
+This is sound because the hidden function is fixed for the whole session: the same input always gets the same answer, so there is nothing a second query could learn.
+
+It is built as two layers, which keeps Checkpoint 04's machine exactly as it was:
+
+| | `GameOracle` (unchanged) | `Investigation` (new) |
+| --- | --- | --- |
+| What it is | The machine | The notebook kept beside it |
+| Asked the same thing twice | Answers again, and counts it | Finds it in the record; the machine is not touched |
+| Knows | The hidden function | Only the answers obtained so far |
+
+`Investigation.ask(input)` returns either `{ kind: 'asked', query }` or `{ kind: 'recalled', query }`, and the laboratory asks through it and nothing else. The machine's own record stays the single source of truth: the investigation keeps no second copy that could drift out of step. Like the machine, it exposes nothing about the hidden function.
+
+### What the laboratory remarks
+
+One line at a time, and none before the first query: the player acts first. The lines follow the player's own train of thought and are spaced so that the last of them is reached within about a dozen queries.
+
+| From query | Remark |
+| --- | --- |
+| 1 | The machine answered. That is one input out of 64. |
+| 3 | Each answer describes a single input, and no other. |
+| 5 | 59 of the 64 possible inputs are untested. |
+| 8 | 8 answers on record. What the machine does is still unknown. |
+| 11 | One input at a time, a complete record would take 64 queries. |
+| 14 | There may be a better way to ask. |
+| 32 | 32 queries, and 32 inputs are still unknown. There may be a better way to ask. |
+| 64 | Every input is on record. It took 64 queries: one for each. |
+
+The numbers are live, and each remark is true for as long as it is shown. The last idea is only wondered at — *there may be* — and nothing says what that way would be. The line echoes the game's tagline: *you only need to know how to ask*.
+
+A player who does test all 64 inputs gets a complete map and the last remark. Nothing else happens; there is still no conclusion to submit.
+
+### How it fits the game
+
+- **Coming back from THE BOX** restores the investigation as it stood: the record, the map, the counts, the remark and the input. Nothing "arrives" a second time. Entering from the main menu still starts a fresh investigation of the same machine.
+- **Keyboard.** Every control works as in Checkpoint 04, and nothing new needs a pointer. The map is a picture, not a control (`role="img"`, with a description that keeps count); everything it shows is also in the log, as text. After a repeated input, as after an answer, typing starts over from the left.
+- **Reduced motion.** An answer landing in its cell, a recalled entry and a new remark each have a short animation; all are switched off under `prefers-reduced-motion`, and none of them carries information that is not also there in words.
+- **Narrow windows.** Checked from 900 × 600 to 1920 × 1080 with a full log: nothing overlaps and nothing leaves the window.
+
+### Tests
+
+127 new tests, 659 in the project:
+
+- **Investigation** — a new input asks the machine and uses one query; a repeated one is recalled, hands back the very entry on record and uses none, however often it is repeated; looking an input up is free; progress always accounts for the whole input space; a complete record takes exactly 64 queries and no more are possible; a refused input is never remembered as an answer; nothing about the function is exposed.
+- **The fixed function** — the same answer at the start and the end of a session, in any order of asking, in every investigation; a complete record is exactly the prototype machine's pinned behaviour.
+- **Input space** — 2ⁿ inputs; the 8 × 8 layout; position and input are each other's inverse; the first bits pick the row; the order is the one the machine reads inputs in.
+- **Remarks** — nothing before the first query; the eight thresholds; never a step backwards; the question of a better way is reached within 16 queries; every number quoted is a real one; the record is called complete only when it is; nothing names the rule, what comes later, or a finish line; other machine sizes and singular wording.
+- **The laboratory** — it asks only through the investigation and holds no machine of its own; a repeat returns before the machine is set to work; coming back from THE BOX keeps the investigation.
+- **Player-facing text** — the new words are present, and the unrevealed ones are still absent everywhere.
+
+Twenty-three deliberate bugs were introduced one at a time (a repeat that uses a query, a lookup that matches the wrong entry, a reversed bit order, a remark that arrives late or announces instead of wonders, a laboratory that bypasses the record, and others). The tests caught twenty-two; the twenty-third exposed a gap, which a new test now closes.
+
+The interface was exercised in a browser: sixty-four queries to a complete record, repeats at every stage, the keyboard alone, leaving for THE BOX mid-query, and the layout at six window sizes.
+
 ## Known limits
 
 - **Desktop only.** Below a 900px-wide viewport the game is replaced by a notice.
@@ -386,7 +471,9 @@ It does not mention Hadamard gates, phase, the quantum oracle, Deutsch–Jozsa, 
 - **Bundle size.** Phaser is included whole (about 320 kB gzipped). A trimmed custom Phaser build is a later optimisation.
 - **Quantum engine scope.** Multi-qubit operations are limited to permutations of basis states, which is all an oracle needs; there is no general multi-qubit gate (an arbitrary controlled rotation, say).
 - **Simulating the oracle is not free.** Building U_f evaluates f on all 2ⁿ inputs, because a simulator must know the whole unitary. That is the cost of simulating a quantum computer on a classical one; the algorithm itself still makes a single query.
-- **Prototype scope.** The machine has one fixed hidden rule and the laboratory has no goal to reach. The experiment log is not saved: it survives a visit to THE BOX, but returning to the main menu clears it.
+- **Investigation scope.** The machine has one fixed hidden rule, and the investigation has no conclusion to submit and nothing that ends it. The record is not saved: it survives a visit to THE BOX, but returning to the main menu — one press of `Esc` — clears it.
+- **A query in flight counts.** If the player leaves for THE BOX while the machine is still working, that query is on record when they return, with its answer, though they did not see it arrive.
+- **The map is drawn cell by cell.** That suits six bits (64 cells). A machine with a much longer input would need a different picture.
 - **Session only.** Whether THE BOX has been observed is remembered until the page is reloaded, and no longer.
 - **No sound.** There is no audio system yet.
 - **Log scrolling.** The log draws no scrollbar. It follows its newest entry by itself; older entries are reached with the wheel, a trackpad, or the arrow keys once it has focus.

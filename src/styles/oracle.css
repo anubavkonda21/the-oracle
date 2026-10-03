@@ -1,9 +1,10 @@
 /*
- * Components for operating the machine: the binary input, the console that
- * holds it, and the experiment log. Builders are in src/game/ui/components/.
+ * Components for operating the machine and keeping the record of it: the
+ * binary input, the console that holds it, the experiment log, and the map of
+ * the input space. Builders are in src/game/ui/components/.
  */
 
-/* ---------- Console: label, bits and the ask control ---------- */
+/* ---------- Console: label, bits, the ask control and the record line ---------- */
 
 .console {
   display: grid;
@@ -19,6 +20,49 @@
 /* The ask control is as tall as the bits beside it. */
 .console .control {
   align-self: stretch;
+}
+
+/*
+ * The record line: what the record holds for the input as it stands. It
+ * never widens the console — it takes the width the bits and the ask control
+ * have set, and wraps inside that if a window is too narrow for one line.
+ */
+.console__record {
+  grid-column: 1 / -1;
+  width: 0;
+  min-width: 100%;
+  /* Clears the typing cursor, which hangs below the bits. */
+  margin-top: calc(8 * var(--u));
+  line-height: 1.5;
+  white-space: normal;
+}
+
+/* A phrase of the line stays whole; the line only ever breaks between phrases. */
+.console__record span {
+  white-space: nowrap;
+}
+
+/*
+ * The player asked about an input that is already on record. The line says
+ * that no query was used, and steps forward — heavier, and in full black, so
+ * the change is not carried by a flicker alone.
+ */
+.console__record[data-recalled] {
+  color: var(--color-text-primary);
+  font-weight: 500;
+  animation: record-recalled 420ms var(--ease-precise);
+}
+
+@keyframes record-recalled {
+  from {
+    opacity: 0.15;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .console__record[data-recalled] {
+    animation: none;
+  }
 }
 
 /*
@@ -185,11 +229,27 @@
   background: var(--color-surface);
 }
 
+/*
+ * A rule along the bottom of the headings that travels with them, so an entry
+ * sliding under the headings is cut off at a line rather than in mid-air. It
+ * is drawn as part of each heading because, in a collapsed table, a cell's
+ * border stays behind when the cell sticks, and its shadow is not painted.
+ */
+.log__table thead th::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--hairline);
+  background: var(--color-border);
+}
+
 .log__table td {
   border-top: var(--hairline) solid var(--color-border);
 }
 
-/* The first column keeps a gutter for the marker, so every entry lines up whether or not it is marked. */
+/* The first column keeps a gutter for the markers, so every entry lines up whether or not it is marked. */
 .log__table th:first-child,
 .log__table td:first-child {
   padding-left: 1.3em;
@@ -208,10 +268,165 @@
   content: '';
   position: absolute;
   top: 50%;
-  left: 0;
+  left: 0.15em;
   width: 0.5em;
   height: 0.5em;
   margin-top: -0.25em;
   border-radius: 50%;
   background: var(--color-signal-red);
+}
+
+/*
+ * The entry for the input the player is composing, if the record has one: a
+ * ring in the gutter (around the dot, when it is also the newest entry) and a
+ * tinted row. The ring means the tint is not the only thing marking it.
+ */
+.log__table tr[aria-current] td {
+  background-color: color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+.log__table tr[aria-current] td:first-child::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0.8em;
+  height: 0.8em;
+  margin-top: -0.4em;
+  border: var(--hairline) solid var(--color-text-primary);
+  border-radius: 50%;
+}
+
+/* An entry that has just been recalled, in place of a repeated query: the row darkens for a moment, then settles. */
+.log__table tr[data-recalled] td {
+  animation: log-recalled 900ms var(--ease-precise);
+}
+
+@keyframes log-recalled {
+  from {
+    background-color: color-mix(in srgb, var(--color-text-primary) 26%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .log__table tr[data-recalled] td {
+    animation: none;
+  }
+}
+
+/* ---------- Input space: one cell for every possible input ---------- */
+
+.input-space .panel__content {
+  font-family: var(--font-machine);
+  font-size: var(--type-micro);
+  line-height: 1;
+  letter-spacing: var(--tracking-machine);
+}
+
+.input-space__summary,
+.input-space__count {
+  display: flex;
+  justify-content: space-between;
+}
+
+.input-space__summary {
+  padding-bottom: calc(10 * var(--u));
+  border-bottom: var(--hairline) solid var(--color-border);
+}
+
+.input-space__map {
+  padding: calc(12 * var(--u)) 0;
+}
+
+/* The first and the last input, printed at the corners of the grid they occupy. */
+.input-space__end {
+  display: block;
+}
+
+.input-space__end--last {
+  /* Letter-spacing leaves a gap after the last digit; pull it back so the digits end on the grid's edge. */
+  margin-right: calc(-1 * var(--tracking-machine));
+  text-align: right;
+}
+
+.input-space__grid {
+  display: grid;
+  grid-template-columns: repeat(var(--columns), 1fr);
+  gap: calc(6 * var(--u));
+  margin: calc(9 * var(--u)) 0;
+}
+
+/*
+ * One possible input. Untested, it is an empty outline. Tested, it shows the
+ * answer the way a bit of the input does: a 0 is an open cell and a 1 a
+ * filled one, with the digit printed in both.
+ */
+.input-space__cell {
+  position: relative;
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  border: var(--hairline) solid var(--color-border);
+  border-radius: 2px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.input-space__cell[data-output] {
+  border-color: var(--color-text-primary);
+}
+
+.input-space__cell[data-output='1'] {
+  background-color: var(--color-text-primary);
+  color: var(--color-background);
+}
+
+/* An answer arriving in its cell. */
+.input-space__cell[data-arrived] {
+  animation: input-space-arrive 260ms var(--ease-precise);
+}
+
+@keyframes input-space-arrive {
+  from {
+    opacity: 0.2;
+    transform: scale(0.55);
+  }
+}
+
+/*
+ * The input the player is composing: four corner marks around its cell, like
+ * the reticle of a measuring instrument. Drawn outside the cell, so the mark
+ * reads the same on an empty, an open and a filled cell.
+ */
+.input-space__cell[data-cursor]::after {
+  --mark: var(--color-text-primary);
+  --arm: 34%;
+  --stroke: 1.5px;
+
+  content: '';
+  position: absolute;
+  inset: calc(-1 * max(3px, 4 * var(--u)));
+  background:
+    linear-gradient(var(--mark), var(--mark)) left top / var(--arm) var(--stroke),
+    linear-gradient(var(--mark), var(--mark)) left top / var(--stroke) var(--arm),
+    linear-gradient(var(--mark), var(--mark)) right top / var(--arm) var(--stroke),
+    linear-gradient(var(--mark), var(--mark)) right top / var(--stroke) var(--arm),
+    linear-gradient(var(--mark), var(--mark)) left bottom / var(--arm) var(--stroke),
+    linear-gradient(var(--mark), var(--mark)) left bottom / var(--stroke) var(--arm),
+    linear-gradient(var(--mark), var(--mark)) right bottom / var(--arm) var(--stroke),
+    linear-gradient(var(--mark), var(--mark)) right bottom / var(--stroke) var(--arm);
+  background-repeat: no-repeat;
+}
+
+.input-space__counts {
+  display: grid;
+  row-gap: calc(10 * var(--u));
+  padding-top: calc(12 * var(--u));
+  border-top: var(--hairline) solid var(--color-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input-space__cell[data-arrived] {
+    animation: none;
+  }
 }
