@@ -89,14 +89,12 @@ export class LaboratoryScene extends StageScene {
     this.view = createLaboratoryView({
       levelNumber: 1,
       // The question the investigation opens with. Once the constraint is disclosed, a sharper one takes its place.
-      objective: 'Find out what the machine does.',
+      objective: 'The Oracle accepts a binary input and returns a single bit. The rule is unknown.',
       inputLength: this.investigation.inputLength,
       onToggleBit: (index) => this.editInput(toggleBit(this.binaryInput, index)),
       onFocusBit: (index) => this.placeCursor(setCursor(this.binaryInput, index)),
       onAsk: () => this.ask(),
       onReturn: () => this.returnToMenu(),
-      boxObserved: this.session.hasObservedBox,
-      onOpenBox: () => this.openBox(),
       onConclude: (kind) => this.conclude(kind),
       onEnterQuantumMode: () => this.enterQuantumMode(),
     });
@@ -152,10 +150,6 @@ export class LaboratoryScene extends StageScene {
         break;
       case 'Escape':
         this.returnToMenu();
-        break;
-      case 'b':
-      case 'B':
-        this.openBox();
         break;
     }
   }
@@ -308,9 +302,5 @@ export class LaboratoryScene extends StageScene {
     const hiddenFunction = oracle[HIDDEN_FUNCTION];
     audioManager.playQuantumTransition();
     this.leaveTo(SCENE_KEYS.quantum, { hiddenFunction });
-  }
-
-  private openBox(): void {
-    this.leaveTo(SCENE_KEYS.box);
   }
 }

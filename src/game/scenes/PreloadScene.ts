@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import { FONT_FAMILIES } from '../config/designTokens';
 import { DESIGN_WIDTH } from '../config/display';
 import { SCENE_KEYS } from '../config/sceneKeys';
-import { createObservationBoxTextures } from '../entities/observationBoxTexture';
 import { createOracleMachineTexture } from '../entities/oracleMachineTexture';
 import { loadFonts } from '../systems/fontLoader';
 import { markBootComplete } from '../ui/shell';
@@ -29,7 +28,6 @@ export class PreloadScene extends Phaser.Scene {
   create(): void {
     const renderResolution = this.scale.width / DESIGN_WIDTH;
     createOracleMachineTexture(this.textures, renderResolution);
-    createObservationBoxTextures(this.textures, renderResolution);
 
     void loadFonts(Object.values(FONT_FAMILIES)).then(() => {
       markBootComplete();

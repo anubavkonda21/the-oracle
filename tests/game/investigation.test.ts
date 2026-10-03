@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { ORACLE_INPUT_LENGTH } from '../../src/game/config/oracleConfig';
-import { BoxExperiment } from '../../src/game/systems/box/BoxExperiment';
 import { GameOracle } from '../../src/game/systems/oracle/GameOracle';
 import { Investigation } from '../../src/game/systems/oracle/Investigation';
 import { inputAt, inputSpaceSize } from '../../src/game/systems/oracle/inputSpace';
@@ -519,26 +518,5 @@ describe('the laboratory investigates through the record', () => {
 
     expect(consulted).toBeGreaterThan(-1);
     expect(working).toBeGreaterThan(consulted);
-  });
-});
-
-describe('THE BOX leaves the investigation alone', () => {
-  it('has the same record and the same progress after any number of observations', () => {
-    const investigation = prototypeInvestigation();
-    investigation.ask('010110');
-    investigation.ask('000001');
-    const record = JSON.stringify(investigation.record);
-    const progress = investigation.progress;
-
-    const experiment = new BoxExperiment();
-    for (let replay = 0; replay < 25; replay += 1) {
-      experiment.beginObservation();
-      experiment.measure();
-      experiment.reset();
-    }
-
-    expect(JSON.stringify(investigation.record)).toBe(record);
-    expect(investigation.progress).toEqual(progress);
-    expect(investigation.ask('010110').kind).toBe('recalled');
   });
 });

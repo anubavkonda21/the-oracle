@@ -3,7 +3,6 @@ export const SCENE_KEYS = {
   preload: 'Preload',
   mainMenu: 'MainMenu',
   laboratory: 'Laboratory',
-  box: 'Box',
   quantum: 'QMode',
   reveal: 'Reveal',
   credits: 'Credits',

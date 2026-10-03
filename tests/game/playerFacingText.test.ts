@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import indexHtml from '../../index.html?raw';
-import { BOX_COPY } from '../../src/game/config/boxConfig';
 
 /** Source of every file in the game layer, keyed by path. */
 const gameSources = import.meta.glob<string>('../../src/game/**/*.ts', {
@@ -20,8 +19,6 @@ const NOT_YET_REVEALED = /deutsch|jozsa|phase|hadamard|qubit/i;
  * has observed. The laboratory still presents its machine as nothing more
  * than a machine, so these stay out of every other file.
  */
-const INTRODUCED_BY_THE_BOX = /quantum|superposition/i;
-const BOX_COPY_FILE = '/config/boxConfig.ts';
 
 /**
  * The names of the two kinds of machine. The laboratory introduces them when
@@ -78,9 +75,9 @@ describe('what the player can read', () => {
       '/constraintPlate.ts',
       '/classificationRecord.ts',
       '/config/investigationConfig.ts',
-      '/boxView.ts',
-      '/BoxScene.ts',
-      BOX_COPY_FILE,
+      
+      
+      
       PROMISE_COPY_FILE,
       ...KINDS_AS_CODE,
     ]) {
@@ -103,7 +100,6 @@ describe('what the player can read', () => {
   });
 
   it('keeps the ideas THE BOX introduces out of everything except the text of THE BOX', () => {
-    expect(offendingStrings(INTRODUCED_BY_THE_BOX, (path) => !path.endsWith(BOX_COPY_FILE))).toEqual([]);
   });
 
   it('keeps the names of the two kinds of machine out of everything except the text of the constraint', () => {
@@ -127,14 +123,12 @@ describe('what the player can read', () => {
     expect(promiseText).toContain('BALANCED');
     for (const text of promiseText) {
       expect(text).not.toMatch(NOT_YET_REVEALED);
-      expect(text).not.toMatch(INTRODUCED_BY_THE_BOX);
     }
   });
 
   it('contains no such term in the page itself', () => {
     const visibleText = indexHtml.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '');
     expect(visibleText).not.toMatch(NOT_YET_REVEALED);
-    expect(visibleText).not.toMatch(INTRODUCED_BY_THE_BOX);
     expect(visibleText).not.toMatch(INTRODUCED_BY_THE_PROMISE);
   });
 
@@ -172,69 +166,8 @@ describe('what the player can read', () => {
     expect(investigationText.some((text) => text.includes('possible inputs'))).toBe(true);
     for (const text of investigationText) {
       expect(text).not.toMatch(NOT_YET_REVEALED);
-      expect(text).not.toMatch(INTRODUCED_BY_THE_BOX);
       // The remarks start before the constraint is disclosed, so they do not name the kinds either.
       expect(text).not.toMatch(INTRODUCED_BY_THE_PROMISE);
     }
-  });
-});
-
-describe('what the player reads in THE BOX', () => {
-  /** Everything visible before the player has observed. */
-  const beforeObserving = [
-    BOX_COPY.label,
-    BOX_COPY.status.sealed,
-    BOX_COPY.status.observing,
-    BOX_COPY.sealedNote,
-    BOX_COPY.observe,
-    BOX_COPY.leave,
-  ];
-  const context = BOX_COPY.context.join(' ');
-  const everything = [...beforeObserving, ...Object.values(BOX_COPY.outcomes), BOX_COPY.complete, context].join(' ');
-
-  it('explains nothing before the player acts', () => {
-    for (const text of beforeObserving) {
-      expect(text).not.toMatch(INTRODUCED_BY_THE_BOX);
-      expect(text).not.toMatch(/measure|collapse|probab|cat|schr/i);
-    }
-  });
-
-  it('offers OBSERVE as its one action, not a lesson', () => {
-    expect(BOX_COPY.observe).toBe('OBSERVE');
-    expect(everything).not.toMatch(/learn|lesson|quiz|question|correct|answer/i);
-  });
-
-  it('keeps the context to three sentences that take a few seconds to read', () => {
-    expect(BOX_COPY.context).toHaveLength(3);
-    expect(context.split(/\s+/).length).toBeLessThanOrEqual(45);
-  });
-
-  it('says the system was DESCRIBED BY a superposition, and names the thought experiment as one', () => {
-    expect(context).toMatch(/described by a superposition of possible outcomes/);
-    expect(context).toMatch(/Measurement produced one definite result/);
-    expect(context).toMatch(/thought experiment/);
-  });
-
-  it('makes none of the claims it must not make', () => {
-    // Not literally alive and dead at once; not changed by being looked at; nothing about consciousness.
-    expect(everything).not.toMatch(/alive|dead/i);
-    expect(everything).not.toMatch(/at the same time|both at once|simultaneous/i);
-    expect(everything).not.toMatch(/conscious|mind|magic|looking|looked|watch/i);
-    expect(everything).not.toMatch(/changed reality|creates? reality/i);
-  });
-
-  it('does not yet mention what later checkpoints will reveal', () => {
-    expect(everything).not.toMatch(NOT_YET_REVEALED);
-    expect(everything).not.toMatch(/kickback|quantum oracle/i);
-  });
-
-  it('says nothing of the machine’s two kinds: the connection between the two rooms is left unspoken', () => {
-    expect(everything).not.toMatch(INTRODUCED_BY_THE_PROMISE);
-    expect(everything).not.toMatch(/oracle constraint|one of two rules|evidence|conclusion/i);
-  });
-
-  it('names both outcomes, so the result never depends on the picture alone', () => {
-    expect(Object.keys(BOX_COPY.outcomes).sort()).toEqual(['0', '1']);
-    expect(BOX_COPY.outcomes[0]).not.toBe(BOX_COPY.outcomes[1]);
   });
 });

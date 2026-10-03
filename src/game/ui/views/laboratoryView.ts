@@ -34,8 +34,6 @@ export interface LaboratoryViewOptions {
   onAsk: () => void;
   onReturn: () => void;
   /** Whether the player has already observed THE BOX in this session. */
-  boxObserved: boolean;
-  onOpenBox: () => void;
 onEnterQuantumMode?: () => void;
   /** The player chose one of the two kinds of machine as their conclusion. */
   onConclude: (kind: OracleKind) => void;
@@ -101,7 +99,7 @@ export interface LaboratoryView {
  * printed above the machine.
  */
 export function createLaboratoryView(options: LaboratoryViewOptions): LaboratoryView {
-  const { levelNumber, objective, inputLength, onToggleBit, onFocusBit, onAsk, onReturn, boxObserved, onOpenBox, onConclude, onEnterQuantumMode } =
+  const { levelNumber, objective, inputLength, onToggleBit, onFocusBit, onAsk, onReturn, onConclude, onEnterQuantumMode } =
     options;
   const titleId = uniqueId('laboratory-title');
   const inputLabelId = uniqueId('input-label');
@@ -190,13 +188,7 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
     createPanel({ heading: 'OBJECTIVE', content: [objectiveText] }),
     createElement('div', { className: 'laboratory__actions' }, [
       quantumModeButton,
-      // The other apparatus in the facility. Once it has been observed, the control says so in place of its key hint.
-      createControlButton({
-        label: 'THE BOX',
-        variant: 'quiet',
-        onActivate: onOpenBox,
-        shortcut: { label: boxObserved ? 'OBSERVED' : 'B', ariaKey: 'B' },
-      }),
+      
       createControlButton({
         label: 'RETURN',
         variant: 'quiet',
