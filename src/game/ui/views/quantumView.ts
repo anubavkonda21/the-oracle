@@ -1,6 +1,6 @@
 import { createElement } from '../dom';
 import { createControlButton } from '../components/controlButton';
-import type { DeutschJozsaResult } from '../../../quantum/deutschJozsa';
+import type { DeutschJozsaResult, DeutschJozsaStep } from '../../../quantum/deutschJozsa';
 import { Q_COPY } from '../../../qcopy';
 
 export interface QuantumViewOptions {
@@ -12,6 +12,8 @@ export interface QuantumView {
   readonly element: HTMLElement;
   showResult(result: DeutschJozsaResult, isFirstRun: boolean): void;
   setStage(stage: string): void;
+  renderState(step: DeutschJozsaStep): void;
+  setRunDisabled(disabled: boolean): void;
 }
 
 export function createQuantumView({ onRun, onNext }: QuantumViewOptions): QuantumView {
@@ -29,12 +31,25 @@ export function createQuantumView({ onRun, onNext }: QuantumViewOptions): Quantu
   });
   nextButton.hidden = true;
 
+  
+  const stateContainer = createElement('div', { className: 'q-state' });
+  stateContainer.style.display = 'flex';
+  stateContainer.style.gap = '0.5rem';
+  stateContainer.style.justifyContent = 'center';
+  stateContainer.style.margin = '2rem 0';
+  stateContainer.style.fontSize = '2rem';
+  stateContainer.style.fontFamily = 'monospace';
+  const qubits = Array.from({ length: 6 }, () => createElement('div', { className: 'q-node', text: '?' }));
+  qubits.forEach(q => stateContainer.appendChild(q));
+
   const element = createElement('section', { className: 'view q-view' }, [
     createElement('div', { className: 'q-header' }, [
       createElement('h1', { className: 'wordmark', text: Q_COPY.mode })
     ]),
     stageLabel,
+    stateContainer,
     resultContainer,
+
     explanation,
     createElement('div', { className: 'q-actions' }, [
       runButton, nextButton
@@ -46,8 +61,35 @@ export function createQuantumView({ onRun, onNext }: QuantumViewOptions): Quantu
     setStage(stage) {
       stageLabel.textContent = stage;
     },
+
+    setRunDisabled(disabled) {
+      if (disabled) {
+        runButton.setAttribute('disabled', 'true');
+        runButton.style.opacity = '0.5';
+        runButton.style.pointerEvents = 'none';
+      } else {
+        runButton.removeAttribute('disabled');
+        runButton.style.opacity = '1';
+        runButton.style.pointerEvents = 'auto';
+      }
+    },
+    renderState(step) {
+      const id = step.id;
+      if (id === 'prepared') {
+        qubits.forEach(q => q.textContent = '0');
+      } else if (id === 'superposed' || id === 'interfered') {
+        qubits.forEach(q => q.textContent = 'ψ');
+      } else if (id === 'queried') {
+        qubits.forEach(q => q.textContent = '±');
+      } else if (id === 'measured') {
+         // Don't update here, it will be updated by showResult
+      }
+    },
     showResult(result, isFirstRun) {
+
       resultContainer.innerHTML = '';
+      const bits = result.measuredLabel.split('');
+      qubits.forEach((q, i) => q.textContent = bits[i] ?? '');
       resultContainer.appendChild(createElement('p', { text: `MEASUREMENT: ${result.measuredLabel}` }));
       resultContainer.appendChild(createElement('p', { text: `ORACLE CLASSIFICATION: ${result.verdict.toUpperCase()}` }));
       resultContainer.appendChild(createElement('p', { text: `${Q_COPY.queries}: ${result.oracleQueries}` }));

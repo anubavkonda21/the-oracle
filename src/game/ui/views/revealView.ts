@@ -1,8 +1,10 @@
 import { createElement } from '../dom';
 import { createControlButton } from '../components/controlButton';
 import { Q_COPY } from '../../../qcopy';
+import type { DeutschJozsaResult } from '../../../quantum/deutschJozsa';
 
 export interface RevealViewOptions {
+  result: DeutschJozsaResult;
   onNext: () => void;
 }
 
@@ -11,14 +13,17 @@ export interface RevealView {
   showLine(index: number): void;
 }
 
-export function createRevealView({ onNext }: RevealViewOptions): RevealView {
+export function createRevealView({ result, onNext }: RevealViewOptions): RevealView {
+  const verdictWord = result.measuredInput === 0 ? Q_COPY.c : Q_COPY.b;
+  const isZero = result.measuredInput === 0;
+  const resultDesc = isZero ? 'ZERO RESULT' : 'NON-ZERO RESULT';
+
   const lines = [
-    createElement('p', { className: 'readout', text: 'YOU DIDN\'T CHECK EVERY POSSIBILITY.' }),
-    createElement('p', { className: 'readout', text: 'YOU CHANGED THE WAY YOU ASKED THE QUESTION.' }),
-    createElement('p', { className: 'readout', text: Q_COPY.title }),
-    createElement('p', { className: 'readout', text: `${Q_COPY.c} → 000000` }),
-    createElement('p', { className: 'readout', text: `${Q_COPY.b} → NON-ZERO MEASUREMENT` }),
-    createElement('p', { className: 'readout', text: `${Q_COPY.queries} → 1` }),
+    createElement('p', { className: 'readout', text: 'MEASUREMENT' }),
+    createElement('p', { className: 'readout', text: result.measuredLabel }),
+    createElement('p', { className: 'readout', text: resultDesc }),
+    createElement('p', { className: 'readout', text: 'THEREFORE' }),
+    createElement('p', { className: 'readout', text: verdictWord }),
   ];
 
   for (const line of lines) {
