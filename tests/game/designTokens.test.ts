@@ -56,10 +56,6 @@ describe('design tokens: TypeScript and CSS stay in sync', () => {
     expect(cssTokens.get('--u')).toBe(`min(100vw / ${DESIGN_WIDTH}, 100vh / ${DESIGN_HEIGHT})`);
   });
 
-  it('hides the game at the same breakpoint in CSS as in the desktop gate', () => {
-    expect(shellCss).toContain(`@media ${COMPACT_VIEWPORT_QUERY}`);
-  });
-
   it('gives the browser chrome the background colour', () => {
     expect(indexHtml).toContain(`<meta name="theme-color" content="${COLORS.background}" />`);
   });

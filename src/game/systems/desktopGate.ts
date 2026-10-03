@@ -14,7 +14,7 @@ export function installDesktopGate(game: Phaser.Game): void {
   const sync = (): void => {
     const keyboard = game.input.keyboard;
     if (keyboard) {
-      keyboard.enabled = !compactViewport.matches;
+      keyboard.enabled = true;
     }
   };
 

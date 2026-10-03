@@ -141,7 +141,7 @@ describe('what the player can read', () => {
       'QUERIES USED',
       'OUTPUT',
       'PROCESSING',
-      'Find out what the machine does.',
+      'The Oracle accepts a binary input and returns a single bit. The rule is unknown.',
       'INPUT SPACE',
       'TESTED',
       'UNTESTED',

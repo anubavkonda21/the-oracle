@@ -38,6 +38,7 @@ export class AudioManager {
 
     osc.start();
     osc.stop(this.ctx.currentTime + duration);
+    osc.onended = () => { gain.disconnect(); osc.disconnect(); };
   }
 
   private startAmbience() {
@@ -96,6 +97,7 @@ export class AudioManager {
     gain.connect(this.ctx.destination);
     osc.start();
     osc.stop(this.ctx.currentTime + 1.5);
+    osc.onended = () => { gain.disconnect(); osc.disconnect(); };
   }
 
   playQuantumStep(step: string) {

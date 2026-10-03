@@ -144,13 +144,4 @@
   white-space: normal;
 }
 
-/* Breakpoint mirrors MIN_VIEWPORT_WIDTH in src/game/config/display.ts (checked by a unit test). */
-@media (max-width: 899px) {
-  .shell {
-    visibility: hidden;
-  }
 
-  .desktop-notice {
-    display: grid;
-  }
-}

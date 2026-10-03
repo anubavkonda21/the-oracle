@@ -37,7 +37,7 @@ export function resolveRenderResolution(environment: DisplayEnvironment): number
   const { devicePixelRatio, screenWidth, screenHeight } = environment;
   const pixelRatio = Number.isFinite(devicePixelRatio) && devicePixelRatio > 0 ? devicePixelRatio : 1;
   const largestFit = fitScale(screenWidth, screenHeight);
-  const upscale = Number.isFinite(largestFit) ? Math.max(1, largestFit) : 1;
+  const upscale = Number.isFinite(largestFit) ? largestFit : 1;
 
   const ideal = Math.min(MAX_RENDER_RESOLUTION, Math.max(MIN_RENDER_RESOLUTION, pixelRatio * upscale));
   return Math.ceil(ideal / RENDER_RESOLUTION_STEP) * RENDER_RESOLUTION_STEP;

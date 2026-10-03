@@ -573,7 +573,7 @@ describe('the laboratory and the promise', () => {
   });
 
   it('starts with the open question, and only later sets the task of telling the kinds apart', () => {
-    expect(scene).toMatch(/'Find out what the machine does\.'/);
+    expect(scene).toMatch(/'The Oracle accepts a binary input and returns a single bit\. The rule is unknown\.'/);
     expect(scene).toMatch(/PROMISE_COPY\.objective/);
   });
 
