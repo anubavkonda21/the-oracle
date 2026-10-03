@@ -257,3 +257,110 @@
 .laboratory__log {
   right: var(--edge-x);
 }
+
+/* ---------- Quantum Mode ---------- */
+
+.q-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  color: var(--color-quantum-indigo);
+  text-align: center;
+}
+
+.q-header {
+  position: absolute;
+  top: var(--edge-y);
+  left: var(--edge-x);
+}
+
+.q-stage {
+  font-size: var(--type-lead);
+  letter-spacing: 0.2em;
+  margin-bottom: calc(24 * var(--u));
+  color: var(--color-text-primary);
+}
+
+.q-node {
+  width: calc(48 * var(--u));
+  height: calc(64 * var(--u));
+  border: var(--hairline) solid var(--color-quantum-indigo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 156, 212, 0.1);
+}
+
+.q-result p {
+  margin: calc(12 * var(--u)) 0;
+  font-family: monospace;
+  font-size: var(--type-body);
+  letter-spacing: 0.1em;
+}
+
+.q-explanation {
+  margin-top: calc(48 * var(--u));
+  max-width: 600px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.q-actions {
+  position: absolute;
+  bottom: var(--edge-y);
+  display: flex;
+  gap: calc(24 * var(--u));
+}
+
+/* ---------- Reveal Mode ---------- */
+
+.reveal-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.reveal-container p {
+  margin: calc(24 * var(--u)) 0;
+  font-size: var(--type-lead);
+  letter-spacing: 0.1em;
+}
+
+.reveal-view .control {
+  margin-top: calc(64 * var(--u));
+}
+
+.q-state {
+  display: flex;
+  gap: calc(12 * var(--u));
+  justify-content: center;
+  margin: calc(48 * var(--u)) 0;
+  font-size: calc(36 * var(--u));
+  font-family: var(--font-machine);
+}
+
+/* ---------- Credits Mode ---------- */
+
+.credits-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: calc(64 * var(--u)) 0;
+  overflow-y: auto;
+}
+
+.credits-container {
+  margin-bottom: calc(48 * var(--u));
+}
+
+.credits-container p {
+  margin: calc(12 * var(--u)) 0;
+  font-size: var(--type-body);
+  color: var(--color-text-primary);
+}

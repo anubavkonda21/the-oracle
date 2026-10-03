@@ -33,12 +33,6 @@ export function createQuantumView({ onRun, onNext }: QuantumViewOptions): Quantu
 
   
   const stateContainer = createElement('div', { className: 'q-state' });
-  stateContainer.style.display = 'flex';
-  stateContainer.style.gap = '0.5rem';
-  stateContainer.style.justifyContent = 'center';
-  stateContainer.style.margin = '2rem 0';
-  stateContainer.style.fontSize = '2rem';
-  stateContainer.style.fontFamily = 'monospace';
   const qubits = Array.from({ length: 6 }, () => createElement('div', { className: 'q-node', text: '?' }));
   qubits.forEach(q => stateContainer.appendChild(q));
 
