@@ -17,6 +17,18 @@ What exists today:
 - A standalone quantum state-vector simulator in `src/quantum/` (see [Checkpoint 02](#checkpoint-02--quantum-engine))
 - Boolean functions, a quantum oracle and the Deutsch–Jozsa algorithm, run on that simulator (see [Checkpoint 03](#checkpoint-03--quantum-oracle-and-deutschjozsa))
 
+## Checkpoint history
+
+The game is built in numbered checkpoints, one commit each. Every checkpoint leaves the project building, typechecking and passing all of its tests.
+
+| Checkpoint | Commit | What it added | Tests after it |
+| --- | --- | --- | --- |
+| [01 — Foundation](#checkpoint-01--foundation) | [`255b82c`](https://github.com/anubavkonda21/the-oracle/commit/255b82c2be80722d53918c493b68bd2c45a91167) `chore: initialize The Oracle project` | Vite + TypeScript + Phaser 3 + Vitest project; Boot, Preload, Main Menu and Laboratory scenes; the visual identity and design system; the responsive stage. | 61 |
+| [02 — Quantum Engine](#checkpoint-02--quantum-engine) | [`e305f67`](https://github.com/anubavkonda21/the-oracle/commit/e305f67a67f58e4e5bdf422589906e6fd1c97bb7) `feat: add quantum state-vector engine` | Complex numbers; n-qubit state vectors; I, X, Z and H gates on any qubit; probabilities; destructive measurement and non-destructive sampling. | 249 |
+| [03 — Quantum Oracle and Deutsch–Jozsa](#checkpoint-03--quantum-oracle-and-deutschjozsa) | [`0f3ae8d`](https://github.com/anubavkonda21/the-oracle/commit/0f3ae8d64611bc037f37ca670724fbc6a55501dc) `feat: add quantum oracle and Deutsch–Jozsa algorithm` | Boolean functions; the bit-flip oracle; the Deutsch–Jozsa algorithm; basis permutations and partial measurement on the state vector. | 398 |
+
+Still to come: gameplay, the classical investigation, quantum visuals, story and sound. Commits that only touch documentation are not listed here; the complete log is on the [commits page](https://github.com/anubavkonda21/the-oracle/commits/main).
+
 ## Stack
 
 TypeScript (strict) · Vite · Phaser 3 · Vitest · plain HTML and CSS. No UI framework, no backend. The build is a static site that can be served from any path (Vercel, Netlify, GitHub Pages).
@@ -74,6 +86,25 @@ tests/
 Colours, font stacks and motion timings are declared twice — in `src/styles/tokens.css` for the DOM and in `src/game/config/designTokens.ts` for the canvas — and a unit test fails if the two disagree. Change both together, and never write a raw colour anywhere else.
 
 The palette is meant to progress with the game: off-white, black and warm grey for the classical world; signal red, sparingly, for uncertainty and Oracle activity; quantum indigo held back entirely until Quantum Mode exists.
+
+## Checkpoint 01 — Foundation
+
+The first commit set up the project and everything the game is built on. It contains no quantum code and no gameplay. The architecture it established is described under [How it is put together](#how-it-is-put-together), above.
+
+| Area | Detail |
+| --- | --- |
+| Project | Vite, strict TypeScript, Phaser 3 and Vitest, with `dev`, `build`, `preview`, `test`, `test:watch` and `typecheck` scripts. The build is a static site with relative paths. |
+| Scenes | `BootScene` → `PreloadScene` → `MainMenuScene` ⇄ `LaboratoryScene`. The laboratory is a placeholder: a matte black machine drawn in code, and an empty HUD. |
+| Stage | A 1440 × 900 design frame that scales to the window without cropping, rendered at the screen's pixel density so it stays sharp. Checked at 1920 × 1080, 1366 × 768 and 1280 × 720. |
+| Visual identity | Warm off-white paper with a faint procedural grain, near-black type, warm grey for secondary text, and signal red used only for status. No gradients, glows or neon. |
+| Typography | Inter for human text and JetBrains Mono for machine text, both self-hosted. |
+| Design system | Colour, font and motion tokens declared in CSS and mirrored in TypeScript, with a test that fails if they drift apart. |
+| Interface components | A control button (primary and quiet, with hover, pressed, disabled and focus states), a panel and a status indicator, all real HTML above the canvas. |
+| Motion | 180ms control feedback and a 480ms fade between scenes, both switched off under `prefers-reduced-motion`. |
+| Accessibility | Semantic HTML, visible keyboard focus, every action reachable by keyboard, focus carried across scene changes, and state never shown by colour alone. |
+| Small screens | Below 900px wide the game is replaced by the notice "THE ORACLE IS DESIGNED FOR A DESKTOP EXPERIMENT." |
+
+Its 61 tests cover the design tokens (including CSS/TypeScript parity and text contrast), the display scaling maths, the paper-grain generator and the small utilities.
 
 ## Checkpoint 02 — Quantum Engine
 
