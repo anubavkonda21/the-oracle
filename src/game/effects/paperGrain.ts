@@ -6,12 +6,12 @@ const TILE_SIZE = 192;
 const GRAIN_SEED = 7;
 
 /**
- * Peak opacity of a single speck. Dark specks sit far from the paper's tone
- * and light specks very close to it, so the two need very different opacities
- * to end up equally faint (roughly ±1% of the paper's brightness).
+ * Peak opacity of a single speck. The sheet is dark now: light specks sit far
+ * from its tone and dark specks very close to it, so the two need very
+ * different opacities to end up equally faint (roughly ±1% of full brightness).
  */
-export const GRAIN_DARK_ALPHA = 0.022;
-export const GRAIN_LIGHT_ALPHA = 0.3;
+export const GRAIN_DARK_ALPHA = 0.3;
+export const GRAIN_LIGHT_ALPHA = 0.022;
 
 /**
  * RGBA pixels for a square tile of paper grain: every pixel is a black or

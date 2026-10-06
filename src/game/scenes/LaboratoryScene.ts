@@ -5,6 +5,7 @@ import { PROMISE_COPY, PROMISE_TIMING } from '../config/promiseConfig';
 import { ORACLE_INSTANCE } from '../systems/oracle/Investigation';
 import { HIDDEN_FUNCTION } from '../systems/oracle/GameOracle';
 import { SCENE_KEYS } from '../config/sceneKeys';
+import { addBackdrop } from '../effects/backdrop';
 import { prefersReducedMotion } from '../effects/motion';
 import { OracleMachine } from '../entities/OracleMachine';
 import { Classification, promiseIsRevealed } from '../systems/oracle/Classification';
@@ -68,6 +69,8 @@ export class LaboratoryScene extends StageScene {
   private hasExperiment = false;
   /** True once the constraint has been put on screen in this visit to the laboratory, so that it is disclosed once. */
   private promiseShown = false;
+  /** The conclusion and its standing as the machine last answered them, so that it answers a change once. */
+  private judgementShown: string | null = null;
 
   constructor() {
     super(SCENE_KEYS.laboratory);
@@ -85,6 +88,7 @@ export class LaboratoryScene extends StageScene {
     this.hasExperiment = true;
     this.isProcessing = false;
     this.promiseShown = false;
+    this.judgementShown = null;
 
     this.view = createLaboratoryView({
       levelNumber: 1,
@@ -100,6 +104,7 @@ export class LaboratoryScene extends StageScene {
     });
     this.enterStage(this.view.element);
 
+    addBackdrop(this);
     this.machine = new OracleMachine(this, DESIGN_WIDTH / 2, MACHINE_CENTER_Y);
 
     // The view and the machine are rebuilt on every entry, so an investigation under way is drawn
@@ -108,10 +113,7 @@ export class LaboratoryScene extends StageScene {
     for (const query of record) {
       this.view.recordQuery(query, false);
     }
-    const lastQuery = record[record.length - 1];
-    if (lastQuery) {
-      this.machine.showAnswer(lastQuery.output, false);
-    }
+    this.machine.restoreRecord(record);
     this.showProgress(false);
     this.drawInput();
 
@@ -171,9 +173,11 @@ export class LaboratoryScene extends StageScene {
     this.view.followCursor(next);
   }
 
-  /** Draws the input as it stands, together with what the record already holds for it. */
+  /** Draws the input as it stands — in the console and on the machine — together with what the record already holds for it. */
   private drawInput(): void {
-    this.view.renderInput(this.binaryInput, this.recordedAnswer());
+    const recorded = this.recordedAnswer();
+    this.view.renderInput(this.binaryInput, recorded);
+    this.machine.showInput(toBinaryString(this.binaryInput), recorded?.output ?? null);
   }
 
   /**
@@ -219,6 +223,7 @@ export class LaboratoryScene extends StageScene {
    */
   private disclosePromise(arrive: boolean): void {
     this.view.revealPromise(arrive);
+    this.machine.unsealResonators(arrive);
     if (!arrive) {
       this.view.setClassificationTask(PROMISE_COPY.objective, false);
       return;
@@ -238,6 +243,13 @@ export class LaboratoryScene extends StageScene {
       },
       announceChange,
     );
+
+    // The machine answers a change in the conclusion, or in how it stands — once, not at every redraw.
+    const judgement = `${this.classification.conclusion ?? ''}:${this.classification.standing ?? ''}`;
+    if (judgement !== this.judgementShown) {
+      this.judgementShown = judgement;
+      this.machine.showStanding(this.classification.standing, announceChange);
+    }
   }
 
   /** The player puts a conclusion on record, or takes back the one that is there. No query is used, and nothing is graded. */
@@ -259,6 +271,7 @@ export class LaboratoryScene extends StageScene {
       // Already on record. The machine is not asked again, nothing is counted, and nothing waits.
       this.restartTyping();
       this.view.showRecalled(outcome.query);
+      this.machine.showRecall();
       return;
     }
     const { query } = outcome;

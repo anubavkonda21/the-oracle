@@ -81,13 +81,13 @@ describe('design tokens: colour helpers', () => {
   });
 
   it('converts tokens to Phaser colour numbers', () => {
-    expect(colorNumber('signalRed')).toBe(0xb3262e);
-    expect(colorNumber('machineBlack')).toBe(0x171717);
+    expect(colorNumber('signalRed')).toBe(0xe6483f);
+    expect(colorNumber('machineBlack')).toBe(0x0d1015);
   });
 
   it('converts tokens to rgba() strings', () => {
-    expect(colorRgba('textPrimary')).toBe('rgba(17, 17, 17, 1)');
-    expect(colorRgba('signalRed', 0.5)).toBe('rgba(179, 38, 46, 0.5)');
+    expect(colorRgba('textPrimary')).toBe('rgba(233, 237, 243, 1)');
+    expect(colorRgba('signalRed', 0.5)).toBe('rgba(230, 72, 63, 0.5)');
   });
 });
 
@@ -97,14 +97,12 @@ describe('design tokens: text contrast (WCAG AA is 4.5:1)', () => {
     expect(contrastRatio(COLORS.textPrimary, COLORS.surface)).toBeGreaterThan(7);
   });
 
-  it('secondary text sits at the AA threshold on the background', () => {
-    // The specified pair measures 4.4992:1 — 4.50:1 as usually quoted, but a hair under a strict 4.5.
-    // This guards against it getting any worse; see "Known limits" in the README.
-    expect(contrastRatio(COLORS.textSecondary, COLORS.background)).toBeCloseTo(4.5, 2);
+  it('secondary text clears AA on the background, with room to spare', () => {
+    expect(contrastRatio(COLORS.textSecondary, COLORS.background)).toBeGreaterThan(6.5);
   });
 
-  it('secondary text does not meet AA on panel surfaces, which is why panels use primary text', () => {
-    expect(contrastRatio(COLORS.textSecondary, COLORS.surface)).toBeLessThan(4.5);
+  it('secondary text clears AA on panel surfaces too', () => {
+    expect(contrastRatio(COLORS.textSecondary, COLORS.surface)).toBeGreaterThan(6.5);
   });
 
   it('both text colours of the dark room are clearly legible on its background', () => {
@@ -117,12 +115,37 @@ describe('design tokens: text contrast (WCAG AA is 4.5:1)', () => {
   });
 });
 
-describe('design tokens: the dark room', () => {
-  it('uses the palette specified for THE BOX', () => {
-    expect(COLORS.darkBackground).toBe('#171717');
-    expect(COLORS.darkTextPrimary).toBe('#F1EFE9');
-    expect(COLORS.darkTextSecondary).toBe('#A8A59E');
-    expect(COLORS.darkBorder).toBe('#5A5750');
+describe('design tokens: the laboratory is a dark room', () => {
+  it('uses the palette approved for the dark laboratory', () => {
+    expect(COLORS.background).toBe('#0B0E13');
+    expect(COLORS.textPrimary).toBe('#E9EDF3');
+    expect(COLORS.textSecondary).toBe('#94A0B2');
+    expect(COLORS.surface).toBe('#11151C');
+    expect(COLORS.void).toBe('#06080B');
+    expect(COLORS.instrument).toBe('#DDE7F4');
+    expect(COLORS.signalRed).toBe('#E6483F');
+    expect(COLORS.quantumIndigo).toBe('#7B6EF6');
+    expect(COLORS.quantumBright).toBe('#A99FFF');
+  });
+
+  it('has one room: the old second room repeats the laboratory\'s four colours', () => {
+    expect(COLORS.darkBackground).toBe(COLORS.background);
+    expect(COLORS.darkTextPrimary).toBe(COLORS.textPrimary);
+    expect(COLORS.darkTextSecondary).toBe(COLORS.textSecondary);
+    expect(COLORS.darkBorder).toBe(COLORS.border);
+  });
+
+  it('is dark: the room is far darker than anything read or lit in it', () => {
+    expect(contrastRatio(COLORS.background, COLORS.void)).toBeLessThan(1.1);
+    for (const light of [COLORS.textPrimary, COLORS.instrument, COLORS.quantumBright]) {
+      expect(contrastRatio(light, COLORS.background)).toBeGreaterThan(7);
+    }
+  });
+
+  it('keeps the lines of its instruments visible without making them loud', () => {
+    const lines = contrastRatio(COLORS.border, COLORS.background);
+    expect(lines).toBeGreaterThan(1.8);
+    expect(lines).toBeLessThan(3);
   });
 
   it('introduces no indigo: the dark environment only remaps the classical colours', () => {

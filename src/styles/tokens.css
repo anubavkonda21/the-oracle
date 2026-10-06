@@ -8,28 +8,40 @@
  * colour, font name or duration.
  */
 :root {
-  /* Classical palette — the whole early game lives in these. */
-  --color-background: #F1EFE9;
-  --color-text-primary: #111111;
-  --color-text-secondary: #6F6D67;
-  --color-border: #D2CEC5;
-  --color-surface: #E9E6DF;
-  --color-machine-black: #171717;
+  /*
+   * The laboratory is a dark room, and light in it means something. These
+   * four are the room itself: its darkness, the two weights of text read in
+   * it, and the lines and surfaces of its instruments.
+   */
+  --color-background: #0B0E13;
+  --color-text-primary: #E9EDF3;
+  --color-text-secondary: #94A0B2;
+  --color-border: #3D4757;
+  --color-surface: #11151C;
+  /* The darkest tone: what lies beyond the reach of any light in the room. */
+  --color-void: #06080B;
+  /* The body of the machine. */
+  --color-machine-black: #0D1015;
 
-  /* Uncertainty — warnings, Oracle activity, measurement, anomalies. Use sparingly. */
-  --color-signal-red: #B3262E;
+  /* Classical light — the cool white of an instrument: what has been asked, and what was answered. */
+  --color-instrument: #DDE7F4;
 
-  /* Quantum — reserved. Intentionally unused until Quantum Mode is introduced. */
-  --color-quantum-indigo: #5146A8;
+  /* Machine activity, warnings, anomalies. A dot, and rarely more. */
+  --color-signal-red: #E6483F;
+
+  /* Quantum — held back. No light of this colour is seen anywhere until Quantum Mode. */
+  --color-quantum-indigo: #7B6EF6;
+  --color-quantum-bright: #A99FFF;
 
   /*
-   * The dark room — THE BOX. These take the place of the classical palette
-   * inside the dark stage environment (see shell.css) and are used nowhere else.
+   * The second room of the earlier, paper-coloured game. The whole game is
+   * dark now, so these repeat the four above; the stage environment that
+   * swaps them in (see shell.css) is kept until the interface is rebuilt.
    */
-  --color-dark-background: #171717;
-  --color-dark-text-primary: #F1EFE9;
-  --color-dark-text-secondary: #A8A59E;
-  --color-dark-border: #5A5750;
+  --color-dark-background: #0B0E13;
+  --color-dark-text-primary: #E9EDF3;
+  --color-dark-text-secondary: #94A0B2;
+  --color-dark-border: #3D4757;
 
   /* Two voices: a human one for language, a machine one for data. */
   --font-human: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -54,9 +66,9 @@
   --edge-x: calc(48 * var(--u));
   --edge-y: calc(36 * var(--u));
 
-  /* Lighting on the paper background: a soft bright centre, a faint darkening at the edges. */
-  --paper-light: color-mix(in srgb, white 32%, transparent);
-  --paper-shade: color-mix(in srgb, var(--color-text-primary) 3%, transparent);
+  /* Lighting on the room behind the stage: a trace of light in the middle, falling away into the corners. */
+  --paper-light: color-mix(in srgb, white 3%, transparent);
+  --paper-shade: color-mix(in srgb, var(--color-void) 70%, transparent);
 
   /* Lighting in the dark room: one faint pool of light on whatever stands in the middle. */
   --dark-light: color-mix(in srgb, white 4.5%, transparent);
@@ -64,8 +76,8 @@
   --radius: 3px;
   --hairline: 1px;
   --shadow-panel:
-    0 1px 0 color-mix(in srgb, var(--color-text-primary) 5%, transparent),
-    0 10px 24px -18px color-mix(in srgb, var(--color-text-primary) 35%, transparent);
+    0 1px 0 color-mix(in srgb, var(--color-void) 60%, transparent),
+    0 10px 24px -18px var(--color-void);
 
   --motion-control: 180ms;
   --motion-scene-fade: 240ms;

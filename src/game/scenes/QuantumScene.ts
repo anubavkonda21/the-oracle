@@ -3,7 +3,11 @@ import type { BooleanFunction } from '../../quantum';
 import { createOracle } from '../../quantum/oracle';
 import { runDeutschJozsa, type DeutschJozsaResult } from '../../quantum/deutschJozsa';
 import { Q_COPY } from '../../qcopy';
+import { DESIGN_WIDTH } from '../config/display';
+import { MACHINE_CENTER_Y } from '../config/oracleConfig';
 import { SCENE_KEYS } from '../config/sceneKeys';
+import { addBackdrop } from '../effects/backdrop';
+import { OracleMachine } from '../entities/OracleMachine';
 import { StageScene } from './StageScene';
 import { createQuantumView, type QuantumView } from '../ui/views/quantumView';
 
@@ -13,6 +17,7 @@ export interface QuantumEntry {
 
 export class QuantumScene extends StageScene {
   private view!: QuantumView;
+  private machine!: OracleMachine;
   private hiddenFunction!: BooleanFunction;
   private hasRun = false;
 
@@ -33,6 +38,10 @@ export class QuantumScene extends StageScene {
     });
 
     this.enterStage(this.view.element, 'dark');
+
+    // The same machine, where it stood in the laboratory — now lit by its own, different light.
+    addBackdrop(this);
+    this.machine = new OracleMachine(this, DESIGN_WIDTH / 2, MACHINE_CENTER_Y, 'quantum');
   }
 
 
@@ -55,6 +64,7 @@ export class QuantumScene extends StageScene {
     this.result = null;
     this.view.setRunDisabled(true);
     this.view.setContinueAvailable(false);
+    this.machine.beginRun();
     
     const oracle = createOracle(this.hiddenFunction);
     const result = runDeutschJozsa(oracle);
@@ -74,7 +84,8 @@ export class QuantumScene extends StageScene {
        this.afterDelay(d, () => {
          const stageName = step.id === 'prepared' ? Q_COPY.prep : step.id === 'superposed' ? Q_COPY.sup : step.id === 'queried' ? Q_COPY.or : step.id === 'interfered' ? Q_COPY.inter : step.id === 'measured' ? Q_COPY.meas : '';
          if (stageName) this.view.setStage(stageName);
-         this.view.renderState(step);
+         // The machine is told which stage has been reached — and, at the measurement only, what was read.
+         this.machine.showRunStage(step.id, step.id === 'measured' ? result.measuredLabel : undefined);
          if (step.id === 'measured') audioManager.playMeasurement();
          else audioManager.playQuantumStep(step.id);
        });

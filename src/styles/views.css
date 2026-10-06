@@ -260,12 +260,12 @@
 
 /* ---------- Quantum Mode ---------- */
 
+/*
+ * The machine stands in the middle of the stage, where it stood in the
+ * laboratory, and the run is seen on it. The interface keeps clear of it:
+ * the name of the stage above, the reading below, the controls at the foot.
+ */
 .q-view {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent;
   color: var(--color-quantum-indigo);
   text-align: center;
 }
@@ -277,40 +277,53 @@
 }
 
 .q-stage {
+  position: absolute;
+  right: 0;
+  /* Its baseline sits a fixed distance above the top of the machine. */
+  bottom: calc(50% - (var(--machine-offset-y) - 186) * var(--u));
+  left: 0;
+  margin: 0;
   font-size: var(--type-lead);
+  line-height: 1;
   letter-spacing: 0.2em;
-  margin-bottom: calc(24 * var(--u));
+  /* Letter-spacing leaves a gap after the last letter; this keeps the word centred. */
+  text-indent: 0.2em;
   color: var(--color-text-primary);
 }
 
-.q-node {
-  width: calc(48 * var(--u));
-  height: calc(64 * var(--u));
-  border: var(--hairline) solid var(--color-quantum-indigo);
+/* Begins a fixed distance below the base the machine stands on. */
+.q-readout {
+  position: absolute;
+  top: calc(50% + (var(--machine-offset-y) + 200) * var(--u));
+  right: 0;
+  left: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  background: rgba(139, 156, 212, 0.1);
 }
 
 .q-result p {
-  margin: calc(12 * var(--u)) 0;
-  font-family: monospace;
+  margin: calc(8 * var(--u)) 0;
+  font-family: var(--font-machine);
   font-size: var(--type-body);
+  line-height: 1.2;
   letter-spacing: 0.1em;
 }
 
 .q-explanation {
-  margin-top: calc(48 * var(--u));
-  max-width: 600px;
+  margin-top: calc(22 * var(--u));
+  max-width: max(320px, calc(600 * var(--u)));
   line-height: 1.5;
   color: var(--color-text-secondary);
 }
 
 .q-actions {
   position: absolute;
+  right: 0;
   bottom: var(--edge-y);
+  left: 0;
   display: flex;
+  justify-content: center;
   gap: calc(24 * var(--u));
 }
 
@@ -332,15 +345,6 @@
 
 .reveal-view .control {
   margin-top: calc(64 * var(--u));
-}
-
-.q-state {
-  display: flex;
-  gap: calc(12 * var(--u));
-  justify-content: center;
-  margin: calc(48 * var(--u)) 0;
-  font-size: calc(36 * var(--u));
-  font-family: var(--font-machine);
 }
 
 /* ---------- Credits Mode ---------- */

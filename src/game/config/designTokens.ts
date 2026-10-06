@@ -7,27 +7,31 @@ import { hexToNumber, hexToRgba } from '../../utils/color';
  * `src/styles/tokens.css`. Canvas code reads from here, DOM code reads the CSS,
  * and `tests/game/designTokens.test.ts` fails if the two ever drift apart.
  *
- * Palette progression across the game:
- *   classical   → background / text / border / surface
- *   uncertainty → signalRed (warnings, Oracle activity, measurement, anomalies)
- *   quantum     → quantumIndigo (reserved; unused until Quantum Mode exists)
+ * The laboratory is a dark room, and light in it means something:
+ *   the room    → background / text / border / surface, and `void` beyond them
+ *   classical   → instrument (cool white: what has been asked, and answered)
+ *   activity    → signalRed (machine activity, warnings, anomalies)
+ *   quantum     → quantumIndigo / quantumBright (seen nowhere until Quantum Mode)
  *
- * The `dark…` colours are a second, darker room — THE BOX. They replace the
- * classical four inside the dark stage environment and are used nowhere else.
+ * The `dark…` colours belonged to a second room of the earlier, paper-coloured
+ * game. They now repeat the room's four, and stay until the interface is rebuilt.
  */
 export const COLORS = {
-  background: '#F1EFE9',
-  textPrimary: '#111111',
-  textSecondary: '#6F6D67',
-  border: '#D2CEC5',
-  surface: '#E9E6DF',
-  machineBlack: '#171717',
-  signalRed: '#B3262E',
-  quantumIndigo: '#5146A8',
-  darkBackground: '#171717',
-  darkTextPrimary: '#F1EFE9',
-  darkTextSecondary: '#A8A59E',
-  darkBorder: '#5A5750',
+  background: '#0B0E13',
+  textPrimary: '#E9EDF3',
+  textSecondary: '#94A0B2',
+  border: '#3D4757',
+  surface: '#11151C',
+  void: '#06080B',
+  machineBlack: '#0D1015',
+  instrument: '#DDE7F4',
+  signalRed: '#E6483F',
+  quantumIndigo: '#7B6EF6',
+  quantumBright: '#A99FFF',
+  darkBackground: '#0B0E13',
+  darkTextPrimary: '#E9EDF3',
+  darkTextSecondary: '#94A0B2',
+  darkBorder: '#3D4757',
 } as const;
 
 export type ColorToken = keyof typeof COLORS;

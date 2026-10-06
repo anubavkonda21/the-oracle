@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
 import { FONT_FAMILIES } from '../config/designTokens';
 import { DESIGN_WIDTH } from '../config/display';
+import { MACHINE_CENTER_Y } from '../config/oracleConfig';
 import { SCENE_KEYS } from '../config/sceneKeys';
-import { createOracleMachineTexture } from '../entities/oracleMachineTexture';
+import { createBackdropTexture } from '../effects/backdrop';
+import { createOracleMachineTextures } from '../entities/oracleMachineTextures';
 import { loadFonts } from '../systems/fontLoader';
 import { markBootComplete } from '../ui/shell';
 
@@ -27,9 +29,11 @@ export class PreloadScene extends Phaser.Scene {
 
   create(): void {
     const renderResolution = this.scale.width / DESIGN_WIDTH;
-    createOracleMachineTexture(this.textures, renderResolution);
 
     void loadFonts(Object.values(FONT_FAMILIES)).then(() => {
+      // Painted once the fonts are in: the machine has lettering on it, and answers in digits.
+      createBackdropTexture(this.textures, MACHINE_CENTER_Y);
+      createOracleMachineTextures(this.textures, renderResolution);
       markBootComplete();
       this.scene.start(SCENE_KEYS.mainMenu);
     });
