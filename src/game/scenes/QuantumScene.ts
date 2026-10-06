@@ -1,7 +1,7 @@
 import { audioManager } from '../audio/AudioManager';
 import type { BooleanFunction } from '../../quantum';
 import { createOracle } from '../../quantum/oracle';
-import { runDeutschJozsa } from '../../quantum/deutschJozsa';
+import { runDeutschJozsa, type DeutschJozsaResult } from '../../quantum/deutschJozsa';
 import { Q_COPY } from '../../qcopy';
 import { SCENE_KEYS } from '../config/sceneKeys';
 import { StageScene } from './StageScene';
@@ -22,10 +22,14 @@ export class QuantumScene extends StageScene {
 
   create(entry: QuantumEntry): void {
     this.hiddenFunction = entry.hiddenFunction;
+    // This scene object outlives a visit. Nothing from an earlier run may carry over into this one.
+    this.result = null;
+    this.hasRun = false;
+    this.isRunning = false;
 
     this.view = createQuantumView({
       onRun: () => this.runAlgorithm(),
-      onNext: () => this.leaveTo(SCENE_KEYS.reveal, { result: this.result }),
+      onNext: () => this.continueToReveal(),
     });
 
     this.enterStage(this.view.element, 'dark');
@@ -33,16 +37,27 @@ export class QuantumScene extends StageScene {
 
 
   private isRunning = false;
-  private result: any = null;
+  /** The result of the run that has finished in this visit, or `null` while there is none to show. */
+  private result: DeutschJozsaResult | null = null;
+
+  /** Moves on to the reveal — but only with the result of a run that has finished, in this visit. */
+  private continueToReveal(): void {
+    if (this.isRunning || !this.result) {
+      return;
+    }
+    this.leaveTo(SCENE_KEYS.reveal, { result: this.result });
+  }
 
   private runAlgorithm(): void {
     if (this.isRunning) return;
     this.isRunning = true;
+    // Until this run has finished there is no result to move on with — not even the last run's.
+    this.result = null;
     this.view.setRunDisabled(true);
+    this.view.setContinueAvailable(false);
     
     const oracle = createOracle(this.hiddenFunction);
     const result = runDeutschJozsa(oracle);
-    this.result = result;
     
     const steps = result.steps;
     const delays: Record<string, number> = {
@@ -66,6 +81,7 @@ export class QuantumScene extends StageScene {
     }
     
     this.afterDelay(5500, () => {
+      this.result = result;
       audioManager.playResult();
       this.view.showResult(result, !this.hasRun);
       this.view.setStage('RESULT');

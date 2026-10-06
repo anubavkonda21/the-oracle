@@ -284,7 +284,8 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
 
     revealPromise(arrive = true) {
       constraint.element.hidden = false;
-      if (onEnterQuantumMode) { quantumModeButton.style.display = 'block'; }
+      // The way into Quantum Mode appears with the constraint, and not before (see `.control[hidden]`).
+      quantumModeButton.hidden = !onEnterQuantumMode;
       if (arrive) {
         constraint.arrive();
         announce(PROMISE_COPY.announcement);

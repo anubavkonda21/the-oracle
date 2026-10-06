@@ -298,6 +298,11 @@ export class LaboratoryScene extends StageScene {
 
 
   private enterQuantumMode(): void {
+    // Quantum Mode opens once the constraint has been disclosed, and not before. The control is
+    // hidden until then; this is the same rule, enforced where no stray click or call can get past it.
+    if (this.isLeavingStage || !promiseIsRevealed(this.investigation.progress)) {
+      return;
+    }
     const oracle = (this.investigation as any)[ORACLE_INSTANCE];
     const hiddenFunction = oracle[HIDDEN_FUNCTION];
     audioManager.playQuantumTransition();

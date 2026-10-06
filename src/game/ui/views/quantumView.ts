@@ -14,6 +14,8 @@ export interface QuantumView {
   setStage(stage: string): void;
   renderState(step: DeutschJozsaStep): void;
   setRunDisabled(disabled: boolean): void;
+  /** Whether the way on to the reveal is offered. It is not, until a run has finished. */
+  setContinueAvailable(available: boolean): void;
 }
 
 export function createQuantumView({ onRun, onNext }: QuantumViewOptions): QuantumView {
@@ -66,6 +68,9 @@ export function createQuantumView({ onRun, onNext }: QuantumViewOptions): Quantu
         runButton.style.opacity = '1';
         runButton.style.pointerEvents = 'auto';
       }
+    },
+    setContinueAvailable(available) {
+      nextButton.hidden = !available;
     },
     renderState(step) {
       const id = step.id;

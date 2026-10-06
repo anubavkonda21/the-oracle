@@ -16,6 +16,13 @@ export class RevealScene extends StageScene {
   }
 
   create(entry: RevealEntry): void {
+    // There is nothing to reveal without the result of a run. Rather than fail on a blank stage,
+    // go back to the laboratory as it was left.
+    if (!entry?.result) {
+      this.scene.start(SCENE_KEYS.laboratory, { resume: true });
+      return;
+    }
+
     this.view = createRevealView({
       result: entry.result,
       onNext: () => this.leaveTo(SCENE_KEYS.credits),

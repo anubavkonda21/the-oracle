@@ -122,6 +122,14 @@
   transition-duration: 60ms;
 }
 
+/*
+ * `hidden` must win over the display value above. Without this a control that
+ * has been given the `hidden` attribute is still drawn — and still usable.
+ */
+.control[hidden] {
+  display: none;
+}
+
 .control:disabled,
 .control[aria-disabled='true'] {
   border-color: var(--color-border);
