@@ -44,6 +44,13 @@ export interface MachineState {
   mode: MachineMode;
   /** With reduced motion nothing pulses, sweeps or travels: every light simply takes its value. */
   still: boolean;
+  /**
+   * The machine at rest: every light out but the status light. It is at rest
+   * whenever nobody is working at it — on the title screen, and after a run.
+   * `restingAt` is when it last went to rest, or was woken.
+   */
+  resting: boolean;
+  restingAt: number;
 
   /** The input as composed, leftmost bit first; when it last changed; and which bit changed, if it was only one. */
   input: string;
@@ -77,6 +84,8 @@ export function createMachineState(mode: MachineMode): MachineState {
   return {
     mode,
     still: false,
+    resting: false,
+    restingAt: NEVER,
     input: '0'.repeat(PORT_COUNT),
     inputAt: NEVER,
     changedBit: null,
@@ -99,6 +108,25 @@ export function createMachineState(mode: MachineMode): MachineState {
 }
 
 /* ---------- What the machine is told ---------- */
+
+/**
+ * Starts the machine afresh in a mode: nothing on record, nothing running.
+ * The one machine in the room is used for every investigation and every run,
+ * so this is how each of them begins. Whether it is at rest is left as it is.
+ */
+export function resetMachine(state: MachineState, mode: MachineMode): void {
+  const { still, resting, restingAt } = state;
+  Object.assign(state, createMachineState(mode), { still, resting, restingAt });
+}
+
+/** Puts the machine to rest, or wakes it. With `arrive` off the change is simply there. */
+export function setResting(state: MachineState, resting: boolean, now: number, arrive: boolean): void {
+  if (state.resting === resting) {
+    return;
+  }
+  state.resting = resting;
+  state.restingAt = arrive ? now : NEVER;
+}
 
 /**
  * The input as it now stands, and the record's answer for it (`null` if it
@@ -321,7 +349,47 @@ export function computeLook(state: MachineState, now: number, look: MachineLook)
   } else {
     classicalLook(state, now, look);
   }
+  restingLook(state, now, look);
   return look;
+}
+
+/** How long the machine's lights take to go out when it is put to rest, and to come back when it is woken. */
+const REST_MS = 900;
+
+/**
+ * At rest every light on the machine is out, whatever it was showing, and the
+ * status light is turned down: it is powered, and that is all. The caps on
+ * the resonators are hardware, not light, and stay as they are.
+ */
+function restingLook(state: MachineState, now: number, look: MachineLook): void {
+  const changed = shapes(now, state.still).rise(state.restingAt, REST_MS);
+  const power = state.resting ? 1 - changed : changed;
+  if (power >= 1) {
+    return;
+  }
+  for (let tick = 0; tick < TICK_COUNT; tick += 1) {
+    look.ticks[tick] = (look.ticks[tick] ?? 0) * power;
+  }
+  for (let bit = 0; bit < PORT_COUNT; bit += 1) {
+    look.ports[bit] = (look.ports[bit] ?? 0) * power;
+  }
+  for (let resonator = 0; resonator < RESONATOR_COUNT; resonator += 1) {
+    look.resonatorGlow[resonator] = (look.resonatorGlow[resonator] ?? 0) * power;
+    look.resonatorRing[resonator] = (look.resonatorRing[resonator] ?? 0) * power;
+  }
+  look.pointerLevel *= power;
+  look.eyeFill *= power;
+  look.eyeGlow *= power;
+  look.eyeRing *= power;
+  look.eyeHot *= power;
+  look.digitLevel *= power;
+  look.irisLevel *= power;
+  look.sweepLevel *= power;
+  look.pulseLevel *= power;
+  look.halo *= power;
+  look.flash *= power;
+  look.alarm *= power;
+  look.status *= 0.5 + 0.5 * power;
 }
 
 function classicalLook(state: MachineState, now: number, look: MachineLook): void {

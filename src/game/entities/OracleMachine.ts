@@ -25,9 +25,11 @@ import {
   createMachineState,
   reachStage,
   recall,
+  resetMachine,
   restoreRecord,
   setAnswer,
   setInput,
+  setResting,
   setStanding,
   startWorking,
   unseal,
@@ -92,6 +94,7 @@ export class OracleMachine extends Phaser.GameObjects.Container {
   /** One texture pixel in design units: every part is painted at the canvas's own pixel density. */
   private readonly unit: number;
 
+  private readonly chassis: Image;
   private readonly eyeLight: Image;
   private readonly pool: Image;
   private readonly halo: Image;
@@ -134,6 +137,10 @@ export class OracleMachine extends Phaser.GameObjects.Container {
   private hasDrawn = false;
   private recordColor = -1;
   private eyeColor = -1;
+  private bodyTint = 0xffffff;
+  /** The light the machine is throwing into the room at this moment: how much, and what colour. */
+  private emitted = 0;
+  private emittedColor = colorNumber('instrument');
 
   /** Positioned by the centre of the machine's body. */
   constructor(scene: Phaser.Scene, x: number, y: number, mode: MachineMode = 'classical') {
@@ -155,8 +162,8 @@ export class OracleMachine extends Phaser.GameObjects.Container {
     this.pool = part(MACHINE_PARTS.pool, { x: 0, y: height / 2 + base.neckHeight + base.footHeight + 5 });
 
     // --- The body, and the same body as the eye's light catches it ---
-    const body = new Phaser.GameObjects.Image(scene, 0, (margin.bottom - margin.top) / 2, TEXTURE_KEYS.oracleMachine);
-    body.setDisplaySize(width + margin.x * 2, height + margin.top + margin.bottom);
+    this.chassis = new Phaser.GameObjects.Image(scene, 0, (margin.bottom - margin.top) / 2, TEXTURE_KEYS.oracleMachine);
+    this.chassis.setDisplaySize(width + margin.x * 2, height + margin.top + margin.bottom);
     this.eyeLight = new Phaser.GameObjects.Image(scene, 0, 0, TEXTURE_KEYS.oracleMachineLight);
     this.eyeLight.setDisplaySize(width, height).setBlendMode(ADD);
 
@@ -202,7 +209,7 @@ export class OracleMachine extends Phaser.GameObjects.Container {
 
     this.add([
       this.pool,
-      body,
+      this.chassis,
       this.eyeLight,
       this.statusLight,
       ...this.ports,
@@ -231,6 +238,45 @@ export class OracleMachine extends Phaser.GameObjects.Container {
   }
 
   /* ---------- What the machine is told ---------- */
+
+  /**
+   * Starts the machine afresh in a mode — nothing on record, nothing running —
+   * and wakes it if it was at rest. Every investigation, and every visit to
+   * Quantum Mode, begins with this: there is one machine, and it stays in the room.
+   */
+  begin(mode: MachineMode): void {
+    resetMachine(this.model, mode);
+    setResting(this.model, false, performance.now(), true);
+  }
+
+  /** Puts the machine to rest: every light out but the status light. With `animate` off it is simply at rest. */
+  rest(animate = true): void {
+    setResting(this.model, true, performance.now(), animate);
+  }
+
+  /**
+   * How much of the room's light is falling on the machine, from 0 to 1. The
+   * body is painted as it looks in full light; in a darker room it is darker.
+   * Its own lights are not affected.
+   */
+  setRoomLight(level: number): void {
+    const value = Math.round(255 * (0.3 + 0.7 * Math.min(1, Math.max(0, level))));
+    const tint = (value << 16) | (value << 8) | value;
+    if (tint !== this.bodyTint) {
+      this.bodyTint = tint;
+      this.chassis.setTint(tint);
+    }
+  }
+
+  /** How much light the machine is throwing into the room at this moment, from 0 to 1. */
+  get emission(): number {
+    return this.emitted;
+  }
+
+  /** The colour of that light. */
+  get emissionColor(): number {
+    return this.emittedColor;
+  }
 
   /**
    * The input as it now stands, and the answer the record already holds for
@@ -329,6 +375,7 @@ export class OracleMachine extends Phaser.GameObjects.Container {
     if (eyeColor !== this.eyeColor) {
       this.eyeColor = eyeColor;
       const deepColor = mixColor(colorNumber(quantum ? 'quantumIndigo' : 'instrument'), colorNumber('signalRed'), shown.alarm);
+      this.emittedColor = deepColor;
       for (const image of [...this.iris, ...this.digits, this.eyeHot, this.eyeRing, this.pulse, this.flash]) {
         image.setTint(eyeColor);
       }
@@ -410,6 +457,7 @@ export class OracleMachine extends Phaser.GameObjects.Container {
     // --- Status light, and the light the eye throws on everything round it ---
     this.statusLight.setAlpha(look.status);
     this.eyeLight.setAlpha(Math.min(1, shown.halo * 1.5));
+    this.emitted = Math.min(1, shown.halo * 1.9 + look.flash * 0.5);
     this.halo.setAlpha(shown.halo * 0.4);
     this.pool.setAlpha(0.1 + shown.halo * 0.5);
 

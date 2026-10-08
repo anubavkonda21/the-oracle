@@ -3,11 +3,9 @@ import type { BooleanFunction } from '../../quantum';
 import { createOracle } from '../../quantum/oracle';
 import { runDeutschJozsa, type DeutschJozsaResult } from '../../quantum/deutschJozsa';
 import { Q_COPY } from '../../qcopy';
-import { DESIGN_WIDTH } from '../config/display';
-import { MACHINE_CENTER_Y } from '../config/oracleConfig';
 import { SCENE_KEYS } from '../config/sceneKeys';
-import { addBackdrop } from '../effects/backdrop';
-import { OracleMachine } from '../entities/OracleMachine';
+import type { OracleMachine } from '../entities/OracleMachine';
+import { theRoom } from './RoomScene';
 import { StageScene } from './StageScene';
 import { createQuantumView, type QuantumView } from '../ui/views/quantumView';
 
@@ -39,9 +37,13 @@ export class QuantumScene extends StageScene {
 
     this.enterStage(this.view.element, 'dark');
 
-    // The same machine, where it stood in the laboratory — now lit by its own, different light.
-    addBackdrop(this);
-    this.machine = new OracleMachine(this, DESIGN_WIDTH / 2, MACHINE_CENTER_Y, 'quantum');
+    // The same machine, where it stands, in the same room. The work light goes out, and what
+    // light there is from now on is the machine's own — a light the room has not shown before.
+    const room = theRoom(this);
+    room.work(false);
+    room.light('quantum');
+    this.machine = room.machine;
+    this.machine.begin('quantum');
   }
 
 

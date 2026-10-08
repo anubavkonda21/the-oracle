@@ -6,6 +6,7 @@ import { CreditsScene } from '../scenes/CreditsScene';
 import { LaboratoryScene } from '../scenes/LaboratoryScene';
 import { MainMenuScene } from '../scenes/MainMenuScene';
 import { PreloadScene } from '../scenes/PreloadScene';
+import { RoomScene } from '../scenes/RoomScene';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './display';
 
 export interface GameConfigOptions {
@@ -19,8 +20,8 @@ export function createGameConfig({ parent, renderResolution }: GameConfigOptions
   return {
     type: Phaser.AUTO,
     parent,
-    // The paper background is drawn by CSS behind the canvas, so the letterbox
-    // area around the 16:10 stage is indistinguishable from the stage itself.
+    // The page's own colour shows round the 16:10 stage, and the room fades into
+    // it at its edges, so the stage has no visible border in a window of any shape.
     transparent: true,
     banner: false,
     scale: {
@@ -41,6 +42,7 @@ export function createGameConfig({ parent, renderResolution }: GameConfigOptions
     },
     // Sound arrives in a later checkpoint. Until then, don't create an audio context at all.
     audio: { noAudio: true },
-    scene: [BootScene, PreloadScene, MainMenuScene, LaboratoryScene, QuantumScene, RevealScene, CreditsScene],
+    // Scenes draw in this order. The room comes before the scenes the player moves through, so it is beneath them all.
+    scene: [BootScene, PreloadScene, RoomScene, MainMenuScene, LaboratoryScene, QuantumScene, RevealScene, CreditsScene],
   };
 }

@@ -1,13 +1,11 @@
 import { audioManager } from '../audio/AudioManager';
-import { DESIGN_WIDTH } from '../config/display';
-import { MACHINE_CENTER_Y, ORACLE_TIMING } from '../config/oracleConfig';
+import { ORACLE_TIMING } from '../config/oracleConfig';
 import { PROMISE_COPY, PROMISE_TIMING } from '../config/promiseConfig';
 import { ORACLE_INSTANCE } from '../systems/oracle/Investigation';
 import { HIDDEN_FUNCTION } from '../systems/oracle/GameOracle';
 import { SCENE_KEYS } from '../config/sceneKeys';
-import { addBackdrop } from '../effects/backdrop';
 import { prefersReducedMotion } from '../effects/motion';
-import { OracleMachine } from '../entities/OracleMachine';
+import type { OracleMachine } from '../entities/OracleMachine';
 import { Classification, promiseIsRevealed } from '../systems/oracle/Classification';
 import type { OracleQuery } from '../systems/oracle/GameOracle';
 import { Investigation } from '../systems/oracle/Investigation';
@@ -26,6 +24,7 @@ import { listenForKeyPresses } from '../systems/keyboard';
 import type { OracleKind } from '../systems/oracle/oracleKind';
 import { createPrototypeOracle } from '../systems/oracle/prototypeOracle';
 import { createLaboratoryView, type LaboratoryView } from '../ui/views/laboratoryView';
+import { theRoom, type RoomScene } from './RoomScene';
 import { StageScene } from './StageScene';
 
 /** What another scene can hand the laboratory when it starts it. */
@@ -52,8 +51,10 @@ interface LaboratoryEntry {
  *
  * This scene only connects the pieces. The machine's logic, the
  * investigation's and the classification's are in systems/oracle, the
- * machine's appearance in entities/OracleMachine, and the controls in
- * ui/views/laboratoryView.
+ * machine's appearance in entities/OracleMachine, the room it stands in in
+ * RoomScene, and the controls in ui/views/laboratoryView. The machine and
+ * the room are not this scene's: they are there before it starts and after
+ * it ends, and it only tells them what is happening.
  *
  * Nothing is graded, nothing ends, and there is no level progression yet.
  * Nothing here asks the player to work out the machine's rule.
@@ -61,6 +62,7 @@ interface LaboratoryEntry {
 export class LaboratoryScene extends StageScene {
   private investigation!: Investigation;
   private classification!: Classification;
+  private room!: RoomScene;
   private machine!: OracleMachine;
   private view!: LaboratoryView;
   private binaryInput!: BinaryInputState;
@@ -104,11 +106,15 @@ export class LaboratoryScene extends StageScene {
     });
     this.enterStage(this.view.element);
 
-    addBackdrop(this);
-    this.machine = new OracleMachine(this, DESIGN_WIDTH / 2, MACHINE_CENTER_Y);
+    // The work light comes up, and the machine starts afresh — awake, with nothing on its dial.
+    this.room = theRoom(this);
+    this.room.work(false);
+    this.room.light('classical');
+    this.machine = this.room.machine;
+    this.machine.begin('classical');
 
-    // The view and the machine are rebuilt on every entry, so an investigation under way is drawn
-    // back into them as it stands, without the ceremony of each answer arriving again.
+    // The view is rebuilt on every entry and the machine starts afresh, so an investigation under way
+    // is drawn back into them as it stands, without the ceremony of each answer arriving again.
     const record = this.investigation.record;
     for (const query of record) {
       this.view.recordQuery(query, false);
@@ -224,6 +230,8 @@ export class LaboratoryScene extends StageScene {
   private disclosePromise(arrive: boolean): void {
     this.view.revealPromise(arrive);
     this.machine.unsealResonators(arrive);
+    // The room answers too: its light draws in, and the cooling line that serves the resonators comes on.
+    this.room.light('constraint');
     if (!arrive) {
       this.view.setClassificationTask(PROMISE_COPY.objective, false);
       return;
@@ -279,6 +287,7 @@ export class LaboratoryScene extends StageScene {
     this.isProcessing = true;
     this.view.setProcessing(true);
     this.machine.startProcessing();
+    this.room.work(true);
 
     const wait = prefersReducedMotion() ? ORACLE_TIMING.reducedMotionProcessingMs : ORACLE_TIMING.processingMs;
     this.afterDelay(wait, () => this.answer(query));
@@ -286,6 +295,7 @@ export class LaboratoryScene extends StageScene {
 
   private answer(query: OracleQuery): void {
     this.machine.showAnswer(query.output);
+    this.room.work(false);
     this.view.recordQuery(query);
     this.view.setProcessing(false);
     this.isProcessing = false;

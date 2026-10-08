@@ -23,9 +23,11 @@ import {
   createMachineState,
   reachStage,
   recall,
+  resetMachine,
   restoreRecord,
   setAnswer,
   setInput,
+  setResting,
   setStanding,
   startWorking,
   unseal,
@@ -548,6 +550,155 @@ describe('the machine in the laboratory', () => {
   });
 });
 
+describe('the machine at rest', () => {
+  /** Every light on the machine that can be put out. */
+  const lights = (look: MachineLook): number[] => [
+    ...look.ticks,
+    ...look.ports,
+    ...look.resonatorGlow,
+    ...look.resonatorRing,
+    look.pointerLevel,
+    look.eyeFill,
+    look.eyeGlow,
+    look.eyeRing,
+    look.eyeHot,
+    look.digitLevel,
+    look.irisLevel,
+    look.sweepLevel,
+    look.pulseLevel,
+    look.halo,
+    look.flash,
+    look.alarm,
+  ];
+
+  const busyMachines = (): MachineState[] => {
+    const working = createMachineState('classical');
+    setInput(working, '111111', null, 0);
+    startWorking(working, 0);
+    const contradicted = answered('100000', 1);
+    setStanding(contradicted, 'contradicted', 0, true);
+    const superposed = createMachineState('quantum');
+    reachStage(superposed, 'superposed', 0);
+    reachStage(superposed, 'ancilla-ready', 0);
+    const measured = createMachineState('quantum');
+    reachStage(measured, 'measured', 0, '101101');
+    return [answered('100000', 1), answered('000000', 0), working, contradicted, superposed, measured];
+  };
+
+  it('has every light out, whatever it was showing — and is still powered', () => {
+    for (const state of busyMachines()) {
+      const awake = snapshot(lookAt(state, 50));
+      expect(Math.max(...lights(awake))).toBeGreaterThan(0.3);
+
+      setResting(state, true, 100, true);
+      const atRest = lookAt(state, 100 + LATER);
+      expect(Math.max(...lights(atRest))).toBe(0);
+      expect(atRest.status).toBeGreaterThan(0);
+      expect(atRest.status).toBeLessThanOrEqual(0.5);
+    }
+  });
+
+  it('goes to rest, and wakes, gradually: its lights fall and rise together', () => {
+    const state = answered('100000', 1);
+    setResting(state, true, LATER, true);
+    let last = lookAt(state, LATER).eyeFill;
+    expect(last).toBeGreaterThan(0.2);
+    for (let now = LATER + 60; now <= LATER + 1200; now += 60) {
+      const fill = lookAt(state, now).eyeFill;
+      expect(fill).toBeLessThanOrEqual(last);
+      last = fill;
+    }
+    expect(last).toBe(0);
+
+    setResting(state, false, LATER * 2, true);
+    last = 0;
+    for (let now = LATER * 2 + 60; now <= LATER * 2 + 1200; now += 60) {
+      const fill = lookAt(state, now).eyeFill;
+      expect(fill).toBeGreaterThanOrEqual(last);
+      last = fill;
+    }
+    // Awake again, it shows exactly what it showed before.
+    expect(snapshot(lookAt(state, LATER * 3))).toEqual(snapshot(lookAt(answered('100000', 1), LATER * 3)));
+  });
+
+  it('is simply at rest, or awake, when the change is made without ceremony', () => {
+    const state = answered('100000', 1);
+    setResting(state, true, 500, false);
+    expect(Math.max(...lights(lookAt(state, 501)))).toBe(0);
+    setResting(state, false, 600, false);
+    expect(lookAt(state, 601).eyeFill).toBeGreaterThan(0.2);
+  });
+
+  it('leaves the caps on the resonators as they are: they are hardware, not light', () => {
+    const capped = createMachineState('classical');
+    setResting(capped, true, 0, false);
+    expect(lookAt(capped, 10).caps.every((cap) => cap === 1)).toBe(true);
+
+    const uncapped = createMachineState('classical');
+    unseal(uncapped, 0, false);
+    setResting(uncapped, true, 0, false);
+    expect(lookAt(uncapped, 10).caps.every((cap) => cap === 0)).toBe(true);
+  });
+
+  it('throws no light into the room, in either mode', () => {
+    for (const mode of ['classical', 'quantum'] as const) {
+      const state = createMachineState(mode);
+      setResting(state, true, 0, false);
+      for (const now of [0, 700, 4200, LATER]) {
+        const look = lookAt(state, now);
+        expect(look.halo).toBe(0);
+        expect(look.flash).toBe(0);
+      }
+    }
+  });
+
+  it('does nothing when told what it already is', () => {
+    const state = answered('100000', 1);
+    setResting(state, false, 700, true);
+    expect(state.restingAt).toBe(Number.NEGATIVE_INFINITY);
+    setResting(state, true, 800, true);
+    setResting(state, true, 5000, true);
+    expect(state.restingAt).toBe(800);
+  });
+});
+
+describe('the one machine, begun afresh', () => {
+  it('starts each investigation with nothing on its dial, in its eye or in its ports', () => {
+    const state = answered('100000', 1);
+    unseal(state, 0, false);
+    setStanding(state, 'established', 0, false);
+
+    resetMachine(state, 'classical');
+    expect(snapshot(lookAt(state, LATER))).toEqual(snapshot(lookAt(createMachineState('classical'), LATER)));
+    expect(state.record.every((answer) => answer === null)).toBe(true);
+    expect(state.sealed).toBe(true);
+    expect(state.standing).toBeNull();
+  });
+
+  it('carries nothing from the investigation into Quantum Mode, and nothing of a run back out', () => {
+    const state = answered('100000', 1);
+    resetMachine(state, 'quantum');
+    expect(snapshot(lookAt(state, LATER))).toEqual(snapshot(lookAt(createMachineState('quantum'), LATER)));
+
+    reachStage(state, 'measured', 0, '101101');
+    resetMachine(state, 'classical');
+    expect(state.measured).toBeNull();
+    expect(state.stage).toBe(-1);
+    expect(lookAt(state, LATER).hue).toBe(0);
+    expect(snapshot(lookAt(state, LATER))).toEqual(snapshot(lookAt(createMachineState('classical'), LATER)));
+  });
+
+  it('keeps whether it is at rest, and whether motion is reduced: neither is the investigation’s to change', () => {
+    const state = createMachineState('classical');
+    state.still = true;
+    setResting(state, true, 40, true);
+    resetMachine(state, 'quantum');
+    expect(state.still).toBe(true);
+    expect(state.resting).toBe(true);
+    expect(state.restingAt).toBe(40);
+  });
+});
+
 describe('the machine with reduced motion', () => {
   const still = (state: MachineState): MachineState => {
     state.still = true;
@@ -863,7 +1014,9 @@ describe('the machine only looks the part', () => {
   it('is told about a run by its stage alone — and, at the measurement only, by what was read', () => {
     const scene = codeOf('/scenes/QuantumScene.ts');
     expect(scene).toMatch(/this\.machine\.showRunStage\(step\.id, step\.id === 'measured' \? result\.measuredLabel : undefined\);/);
-    expect(scene.match(/this\.machine\.\w+\(/g)).toEqual(['this.machine.beginRun(', 'this.machine.showRunStage(']);
+    // It is the room's machine, begun afresh in Quantum Mode; after that it is told when a run starts, and each stage.
+    expect(scene).toMatch(/this\.machine = room\.machine;\s*this\.machine\.begin\('quantum'\);/);
+    expect(scene.match(/this\.machine\.\w+\(/g)).toEqual(['this.machine.begin(', 'this.machine.beginRun(', 'this.machine.showRunStage(']);
     // The state of the run itself never leaves the engine for the canvas.
     expect(scene).not.toMatch(/step\.state/);
   });
@@ -872,6 +1025,7 @@ describe('the machine only looks the part', () => {
     const scene = codeOf('/scenes/LaboratoryScene.ts');
     const told = [...new Set(scene.match(/this\.machine\.\w+/g))].sort();
     expect(told).toEqual([
+      'this.machine.begin',
       'this.machine.restoreRecord',
       'this.machine.showAnswer',
       'this.machine.showInput',
@@ -898,7 +1052,7 @@ describe('the machine only looks the part', () => {
     // Every use is chosen by the look's hue, which the laboratory's machine never raises (tested above).
     expect(entity.match(/quantum \? 'quantum(Indigo|Bright)' : 'instrument'/g)).toHaveLength(uses.length);
     expect(entity).toMatch(/const quantum = look\.hue >= 0\.5;/);
-    for (const file of ['/entities/oracleMachineTextures.ts', '/effects/backdrop.ts', '/scenes/LaboratoryScene.ts']) {
+    for (const file of ['/entities/oracleMachineTextures.ts', '/world/roomTextures.ts', '/scenes/LaboratoryScene.ts']) {
       expect(codeOf(file)).not.toMatch(/quantum(Indigo|Bright)/);
     }
   });

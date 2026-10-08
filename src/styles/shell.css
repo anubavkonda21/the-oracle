@@ -33,14 +33,20 @@
 .stage {
   position: absolute;
   inset: 0;
-  opacity: 1;
-  transition: opacity var(--motion-scene-fade) ease;
 }
 
-/* Toggled by effects/StageFade.ts during scene transitions. */
+/*
+ * Toggled by effects/StageFade.ts during scene transitions. Only the
+ * interface fades (see .stage__ui). The canvas does not: the laboratory on it
+ * is the same room in every scene, and stays in view while the interface of
+ * one scene gives way to the next.
+ */
 .stage[data-visibility='hidden'] {
-  opacity: 0;
   pointer-events: none;
+}
+
+.stage[data-visibility='hidden'] .stage__ui {
+  opacity: 0;
 }
 
 /*
@@ -87,6 +93,8 @@
 .stage__ui {
   position: absolute;
   inset: 0;
+  opacity: 1;
+  transition: opacity var(--motion-scene-fade) ease;
   pointer-events: none;
   user-select: none;
 }
