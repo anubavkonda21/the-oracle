@@ -1,6 +1,7 @@
 /*
  * Stylesheet entry point. Order matters: tokens first, then the page itself,
- * then reusable components, then per-scene layouts.
+ * then reusable components, then what each scene's interface looks like, and
+ * last where it goes — which depends on the shape of the window.
  */
 @import './tokens.css';
 @import './fonts.css';
@@ -9,3 +10,4 @@
 @import './components.css';
 @import './oracle.css';
 @import './views.css';
+@import './compositions.css';

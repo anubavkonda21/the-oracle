@@ -1,0 +1,759 @@
+/*
+ * Compositions: where the interface goes.
+ *
+ * The room and the machine are on the canvas; the words and controls are
+ * here. There are three arrangements of the two, and the shape of the window
+ * chooses between them:
+ *
+ *   WIDE             a desktop or laptop. The whole room is shown, and the
+ *                    interface keeps to its edges and to the floor beneath
+ *                    the machine.
+ *   PHONE LANDSCAPE  the machine to the left, and beside it one column — the
+ *                    desk — with everything there is to read and do.
+ *   PHONE PORTRAIT   the machine at the top, and the desk beneath it.
+ *
+ * Each is designed for its shape; none is another one scaled. In all three
+ * nothing is printed over the machine, and no control lies over another.
+ *
+ * WIDE is for a landscape window wider than 880 pixels and taller than 600:
+ * below either, its panels (whose type has a floor) no longer fit round the
+ * machine without touching it or each other, and the window is laid out as a
+ * phone on its side is.
+ *
+ * A view's parts (.view__header, .view__desk, .view__body, .view__actions —
+ * see views.css) are what a composition places. On a phone the desk is a
+ * single column: what there is to read scrolls, and what there is to do
+ * stays put beneath it.
+ */
+
+/* ==========================================================================
+   WIDE
+   ========================================================================== */
+
+@media (orientation: landscape) and (width > 880px) and (height > 600px) {
+  /*
+   * The interface is laid out in a frame centred on the stage. In a 16:10
+   * window the frame is the stage; in a wider one it reaches a little past
+   * the stage on either side, and in a taller one above and below — but no
+   * further, so that in a very wide or very tall window the interface stays
+   * with the room instead of drifting off to the edges of the screen.
+   */
+  .view {
+    inset: 0;
+    width: min(100%, calc(1600 * var(--u)));
+    height: min(100%, calc(1010 * var(--u)));
+    margin: auto;
+  }
+
+  .view__header {
+    position: absolute;
+    top: var(--edge-y);
+    right: var(--edge-x);
+    left: var(--edge-x);
+  }
+
+  /*
+   * The stage is centred in the frame, so "50%" is the middle of the design
+   * frame, and the machine's place — and anything set a fixed distance from
+   * it — can be given from there in stage units. The machine's body runs
+   * from 150 above its centre to 150 below, and its foot ends at 177 below;
+   * the platform it stands on, with its row of lamps, reaches about 215.
+   * What is set beneath the machine starts clear of that, at 232.
+   */
+
+  /* ---------- Main menu: the name beneath the machine, the control beneath the name ---------- */
+
+  .main-menu__desk {
+    position: absolute;
+    top: calc(50% + (var(--machine-offset-y) + 232) * var(--u));
+    right: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .main-menu__action {
+    margin-top: calc(30 * var(--u));
+  }
+
+  .main-menu__state {
+    position: absolute;
+    right: var(--edge-x);
+    bottom: var(--edge-y);
+  }
+
+  /* ---------- Laboratory: the record to either side, the console beneath, the rest along the bottom ---------- */
+
+  /* The desk and the record are groupings for a phone. Here their contents are placed one by one. */
+  .laboratory__desk,
+  .laboratory__record {
+    display: contents;
+  }
+
+  /* The log is in view the whole time, and the count of queries is at its head. */
+  .laboratory__tally {
+    display: none;
+  }
+
+  /* The input console sits directly beneath the machine. */
+  .laboratory__console {
+    position: absolute;
+    top: calc(50% + (var(--machine-offset-y) + 206) * var(--u));
+    right: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* The remark follows the console in the flow, so it stays clear of it however tall the console is in a small window. */
+  .laboratory__note {
+    max-width: max(320px, calc(540 * var(--u)));
+    margin-top: calc(30 * var(--u));
+    text-align: center;
+  }
+
+  /*
+   * The constraint the machine is under is printed above the machine it
+   * describes. Its bottom edge keeps a fixed distance from the top of the
+   * machine, and it grows upward from there, into the band between the
+   * header's two corners. It is wider than the machine: the panels on either
+   * side start lower down.
+   */
+  .laboratory__constraint {
+    position: absolute;
+    right: 0;
+    bottom: calc(50% - (var(--machine-offset-y) - 172) * var(--u));
+    left: 0;
+    /* Wide enough for each rule to be said on one line. */
+    width: min(100% - 2 * var(--edge-x), max(680px, calc(860 * var(--u))));
+    margin: 0 auto;
+  }
+
+  /*
+   * The record flanks the machine: the map of the input space down the
+   * left-hand side and the experiment log down the right, both starting
+   * level with the top of the machine.
+   */
+  .laboratory__space,
+  .laboratory__log {
+    position: absolute;
+    top: calc(50% + (var(--machine-offset-y) - 150) * var(--u));
+    width: max(236px, calc(296 * var(--u)));
+  }
+
+  .laboratory__space {
+    left: var(--edge-x);
+  }
+
+  .laboratory__log {
+    right: var(--edge-x);
+  }
+
+  /* Along the bottom: what is being asked for, what can be done, and how the system stands. */
+  .laboratory__brief {
+    position: absolute;
+    bottom: var(--edge-y);
+    left: var(--edge-x);
+    /*
+     * It stops short of the controls in the middle, however long the
+     * objective is — and in a small window too, where those controls have
+     * stopped shrinking (their type has a floor) though the stage has not.
+     */
+    max-width: calc(50% - var(--edge-x) - max(250 * var(--u), 196px));
+  }
+
+  .laboratory__status {
+    position: absolute;
+    right: var(--edge-x);
+    bottom: var(--edge-y);
+  }
+
+  .laboratory__actions,
+  .q-actions {
+    position: absolute;
+    right: 0;
+    bottom: var(--edge-y);
+    left: 0;
+    display: flex;
+    justify-content: center;
+    gap: calc(12 * var(--u));
+  }
+
+  /* ---------- Quantum Mode: the same places, for what this mode has to show ---------- */
+
+  .q-desk,
+  .q-body {
+    display: contents;
+  }
+
+  /* The name of the stage is above the machine, where the constraint was in the laboratory. */
+  .q-stage {
+    position: absolute;
+    right: 0;
+    bottom: calc(50% - (var(--machine-offset-y) - 186) * var(--u));
+    left: 0;
+    text-align: center;
+  }
+
+  /* How far the run has got is where the map of the input space was; what it read, where the log was. */
+  .q-sequence,
+  .q-readout {
+    position: absolute;
+    top: calc(50% + (var(--machine-offset-y) - 150) * var(--u));
+    width: max(236px, calc(296 * var(--u)));
+  }
+
+  .q-sequence {
+    left: var(--edge-x);
+  }
+
+  .q-readout {
+    right: var(--edge-x);
+  }
+
+  /* What to make of the reading is beneath the machine, where the laboratory's remarks were. */
+  .q-explanation {
+    position: absolute;
+    top: calc(50% + (var(--machine-offset-y) + 232) * var(--u));
+    right: 0;
+    left: 0;
+    max-width: max(320px, calc(600 * var(--u)));
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  /* ---------- Reveal: the finding beneath the machine, and the way on at the foot ---------- */
+
+  .reveal__desk {
+    position: absolute;
+    top: calc(50% + (var(--machine-offset-y) + 232) * var(--u));
+    right: 0;
+    bottom: var(--edge-y);
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* ---------- Credits: the sheet across the floor beneath the machine ---------- */
+
+  .credits__desk {
+    position: absolute;
+    top: calc(50% + (var(--machine-offset-y) + 232) * var(--u));
+    right: var(--edge-x);
+    bottom: var(--edge-y);
+    left: var(--edge-x);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* If the window is too short for the whole sheet, the sheet scrolls and the control stays where it is. */
+  .credits__record {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    pointer-events: auto;
+    scrollbar-width: none;
+  }
+
+  .credits__record::-webkit-scrollbar {
+    display: none;
+  }
+
+  .credits__sheet {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr 1fr 1.2fr;
+    column-gap: calc(40 * var(--u));
+  }
+
+  .credits__actions {
+    display: flex;
+    flex: none;
+    justify-content: center;
+    padding-top: calc(16 * var(--u));
+  }
+}
+
+/* ==========================================================================
+   PHONE — what the two phone compositions have in common
+   ========================================================================== */
+
+@media (orientation: portrait), (width <= 880px), (height <= 600px) {
+  :root {
+    /*
+     * The interface is sized to be read and touched, and no longer follows
+     * the canvas: this is close to one CSS pixel on any phone, a little
+     * under on the smallest. (Type has floors of its own — see tokens.css.)
+     */
+    --u: clamp(0.82px, 100cqmin / 440, 1px);
+    --edge-x: 16px;
+    --edge-y: 12px;
+    --tracking-control: 0.16em;
+  }
+
+  /*
+   * The room, framed on the machine. The canvas is fitted to this element
+   * (see shell.css), so giving it the size of the whole stage at the scale
+   * wanted, and a place that puts the machine where the composition wants
+   * it, shows the part of the room around the machine at that scale. The
+   * shell crops the rest.
+   */
+  .stage__canvas {
+    inset: auto;
+    top: calc(var(--machine-y) - var(--machine-design-y) * var(--stage-u));
+    left: calc(var(--machine-x) - var(--machine-design-x) * var(--stage-u));
+    width: calc(var(--design-width) * var(--stage-u));
+    height: calc(var(--design-height) * var(--stage-u));
+  }
+
+  .view {
+    inset: 0;
+  }
+
+  .view__header {
+    position: absolute;
+  }
+
+  /* The desk: one column. What there is to read scrolls; what there is to do stays beneath it. */
+  .view__desk {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .view__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    /* Room at the sides for a focus ring, which the scrolling would otherwise crop. */
+    margin-inline: -6px;
+    padding: 14px 6px 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    pointer-events: auto;
+    scrollbar-width: none;
+    /* What scrolls fades out at the top and bottom edge, which is also how it shows there is more. */
+    mask-image: linear-gradient(to bottom, transparent, #000 14px, #000 calc(100% - 18px), transparent);
+  }
+
+  .view__body::-webkit-scrollbar {
+    display: none;
+  }
+
+  .view__actions {
+    display: flex;
+    flex: none;
+    gap: 8px;
+    padding-top: 4px;
+  }
+
+  .view__actions .control {
+    flex: 1 1 auto;
+  }
+
+  /* Controls at a size for a finger. There is no pointer to hover, so no room is kept for the dot that marks one. */
+  .control {
+    min-height: 44px;
+    padding: 0 16px;
+  }
+
+  .control::before {
+    content: none;
+  }
+
+  .control--compact {
+    min-height: 44px;
+    padding: 0 8px;
+  }
+
+  /* The name of a key is of no use on a touch screen, and there is no room for it. (The key still works.) */
+  .control__shortcut {
+    display: none;
+  }
+
+  .panel {
+    min-width: 0;
+  }
+
+  /* ---------- Main menu ---------- */
+
+  .main-menu__identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .main-menu__action .control {
+    min-height: 52px;
+  }
+
+  /* ---------- Laboratory ---------- */
+
+  .laboratory__console {
+    flex: none;
+  }
+
+  /* The six bits share the width of the desk between them. */
+  .bit-input {
+    gap: 6px;
+  }
+
+  .bit {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+  }
+
+  .bit[data-cursor]::after {
+    bottom: -5px;
+  }
+
+  .laboratory__note:empty {
+    display: none;
+  }
+
+  /* The record, in the order it is wanted: what is known, what is asked for, what has been answered, what is left. */
+  .laboratory__record {
+    display: grid;
+    align-content: start;
+    row-gap: 10px;
+  }
+
+  /* The constraint is a plate among the others here. Until it is disclosed it takes up no room at all. */
+  .laboratory__constraint {
+    display: contents;
+  }
+
+  .laboratory__constraint .constraint {
+    padding: 14px 10px;
+    border: var(--hairline) solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+  }
+
+  .constraint__rule {
+    min-width: 0;
+    padding: 0 8px;
+  }
+
+  /* In a narrow desk the name of a rule and its figures may take two lines; they never push the plate wider than the desk. */
+  .constraint__name {
+    line-height: 1.4;
+    white-space: normal;
+  }
+
+  /* The log keeps to a few entries' height and scrolls within itself, so the latest is always brought into view. */
+  .log {
+    max-height: none;
+  }
+
+  .log__scroll {
+    max-height: 136px;
+  }
+
+  /* The input space in four rows of sixteen rather than eight of eight: the same sixty-four inputs in the same order. */
+  .input-space__grid {
+    grid-template-columns: repeat(16, 1fr);
+    gap: 3px;
+  }
+
+  .laboratory__status .panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: 11px;
+  }
+
+  .laboratory__status .panel__heading {
+    margin-bottom: 0;
+  }
+
+  /* ---------- Quantum Mode ---------- */
+
+  .q-stage {
+    position: absolute;
+    text-align: center;
+  }
+
+  .q-body {
+    display: grid;
+    align-content: start;
+    row-gap: 10px;
+  }
+
+  .q-sequence__stage {
+    padding: 8px 0;
+  }
+
+  .q-explanation {
+    padding: 4px 2px 0;
+  }
+
+  /* ---------- Reveal: the finding in the middle of the desk, the way on at its foot ---------- */
+
+  .reveal__finding {
+    justify-content: center;
+  }
+
+  /* ---------- Credits ---------- */
+
+  .credits__sheet {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 16px;
+  }
+
+  .credits__section--identity,
+  .credits__section:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ==========================================================================
+   PHONE PORTRAIT — the machine at the top, the desk beneath it
+   ========================================================================== */
+
+@media (orientation: portrait) {
+  :root {
+    /*
+     * The room is shown about one machine-and-a-half wide, so the machine
+     * fills two thirds of the width of the screen; on a short screen it is
+     * shown smaller, so that the desk keeps the greater part of the height.
+     * The top of the screen is the edge of the ceiling (46 down the design
+     * frame): the light fittings set into the ceiling are out of the frame,
+     * as they are when anything is framed this closely, and the header is
+     * read against the wall rather than against a lamp.
+     */
+    --stage-u: min(100cqw / 720, 100cqh / 1560);
+    --machine-x: 50cqw;
+    --machine-y: calc((var(--machine-design-y) - 46) * var(--stage-u));
+    /* Just below the platform the machine stands on, and its row of lamps: where the desk begins. */
+    --desk-top: calc(var(--machine-y) + 222 * var(--stage-u));
+  }
+
+  /*
+   * The room ends part-way down the screen here, with the page going on
+   * beneath it. Its lower part is let fade out into the page, so the floor
+   * runs away into the dark rather than stopping at an edge.
+   */
+  .stage__canvas {
+    mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  }
+
+  .view__header {
+    top: max(var(--edge-y), var(--safe-top));
+    right: var(--edge-x);
+    left: var(--edge-x);
+  }
+
+  .view__desk {
+    top: var(--desk-top);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    /* On a tablet held upright the desk does not spread across the whole screen. */
+    width: min(100% - 2 * var(--edge-x), 520px);
+    margin: 0 auto;
+    padding-bottom: max(14px, var(--safe-bottom));
+  }
+
+  /* ---------- Main menu: the name beneath the machine, the control at the foot of the screen ---------- */
+
+  .main-menu__desk {
+    /* Room beneath the control for the line that says the system is waiting. */
+    padding-bottom: calc(max(14px, var(--safe-bottom)) + 30px);
+  }
+
+  /* Machine, name, control: three things at even intervals down the screen. */
+  .main-menu__identity {
+    justify-content: center;
+  }
+
+  .title__name {
+    font-size: min(calc(64 * var(--u)), 15cqw);
+  }
+
+  .main-menu__state {
+    position: absolute;
+    right: 0;
+    bottom: max(14px, var(--safe-bottom));
+    left: 0;
+    margin-right: 0;
+    text-align: center;
+  }
+
+  /* ---------- Laboratory: the bits in a row beneath the machine, the control to ask beneath them ---------- */
+
+  .console {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+  }
+
+  .bit {
+    height: 50px;
+  }
+
+  /* On the narrowest phones the bits keep a finger's width by giving up a little of the space between them. */
+  @media (width <= 340px) {
+    .bit-input {
+      gap: 4px;
+    }
+  }
+
+  .console .control {
+    min-height: 46px;
+  }
+
+  .console__record {
+    margin-top: 0;
+  }
+
+  .laboratory__note {
+    margin-top: 6px;
+  }
+
+  /* ---------- Quantum Mode: the name of the stage beneath the machine, the desk beneath that ---------- */
+
+  .q-stage {
+    top: calc(var(--desk-top) + 4px);
+    right: 0;
+    left: 0;
+  }
+
+  .q-desk {
+    top: calc(var(--desk-top) + 30px);
+  }
+
+  /* ---------- Reveal ---------- */
+
+  /* The conclusion is one word across the screen, at whatever size lets the longest of them fit. */
+  .reveal__verdict {
+    font-size: min(calc(52 * var(--u)), 11cqw);
+  }
+}
+
+/* ==========================================================================
+   PHONE LANDSCAPE — the machine to the left, the desk beside it
+   ========================================================================== */
+
+@media (orientation: landscape) and (width <= 880px), (orientation: landscape) and (height <= 600px) {
+  :root {
+    --desk-width: clamp(320px, 48cqw, 400px);
+    /* What is left of the screen for the room. */
+    --room-width: calc(100cqw - var(--desk-width));
+    /* The machine is shown as large as the room's share of the screen allows, with the header above it and a line of text beneath. */
+    --stage-u: min((var(--room-width) - 24px) / 560, (100cqh - 96px) / 420);
+    --machine-x: calc((var(--room-width) + var(--safe-left)) / 2);
+    --machine-y: calc(40px + 150 * var(--stage-u));
+    /* Just below the platform the machine stands on, and its row of lamps. */
+    --below-machine: calc(var(--machine-y) + 224 * var(--stage-u));
+  }
+
+  .view__header {
+    top: max(var(--edge-y), var(--safe-top));
+    right: calc(var(--desk-width) + 14px);
+    left: max(var(--edge-x), var(--safe-left));
+  }
+
+  /* The desk is docked to the edge of the screen: a column of the instrument, with the room going on behind it. */
+  .view__desk {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: var(--desk-width);
+    padding: max(10px, var(--safe-top)) max(14px, var(--safe-right)) max(10px, var(--safe-bottom)) 16px;
+    border-left: var(--hairline) solid color-mix(in srgb, var(--color-border) 70%, transparent);
+    background: color-mix(in srgb, var(--color-background) 88%, transparent);
+  }
+
+  /*
+   * A window laid out this way but nearer square than any phone on its side
+   * — a small window on a desktop — is the one case in which the room ends
+   * above the foot of the screen. There, as on a phone held upright, its
+   * lower part fades into the page.
+   */
+  @media (max-aspect-ratio: 16/10) {
+    .stage__canvas {
+      mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+    }
+  }
+
+  /* ---------- Main menu: the name in the desk, the control at its foot ---------- */
+
+  .main-menu__identity {
+    justify-content: center;
+  }
+
+  .title__name {
+    font-size: min(calc(64 * var(--u)), 13cqh);
+  }
+
+  .main-menu__state {
+    position: absolute;
+    bottom: max(var(--edge-y), var(--safe-bottom));
+    left: max(var(--edge-x), var(--safe-left));
+  }
+
+  /* ---------- Laboratory: the bits and the control to ask in one row at the head of the desk ---------- */
+
+  /*
+   * Six bits a finger wide, with the control to ask beside them where the
+   * desk has room for both in a row. Where it has not, the control goes
+   * beneath the bits rather than the bits being squeezed.
+   */
+  .console {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+  }
+
+  .console__label,
+  .console__record {
+    flex: 0 0 100%;
+  }
+
+  .bit-input {
+    flex: 4 1 calc(6 * 44px + 5 * 5px);
+    gap: 5px;
+  }
+
+  .console .control {
+    flex: 1 0 auto;
+  }
+
+  .bit {
+    height: 44px;
+  }
+
+  .console__record {
+    margin-top: 2px;
+  }
+
+  /* The laboratory's remark is beneath the machine, out of the desk: it is about the machine. */
+  .laboratory__note {
+    position: absolute;
+    top: var(--below-machine);
+    right: calc(100% + 12px);
+    width: calc(var(--room-width) - max(var(--edge-x), var(--safe-left)) - 12px);
+    text-align: center;
+  }
+
+  /* ---------- Quantum Mode: the name of the stage beneath the machine ---------- */
+
+  .q-stage {
+    top: calc(var(--below-machine) + 6px);
+    left: 0;
+    width: calc(2 * var(--machine-x));
+  }
+
+  /* ---------- Reveal ---------- */
+
+  /* The conclusion is one word across the desk, at whatever size lets the longest of them fit. */
+  .reveal__verdict {
+    font-size: min(calc(52 * var(--u)), var(--desk-width) * 0.115);
+  }
+}

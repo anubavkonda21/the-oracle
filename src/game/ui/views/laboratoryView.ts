@@ -1,4 +1,4 @@
-import { formatCounter } from '../../../utils/format';
+import { formatCount, formatCounter } from '../../../utils/format';
 import { DESIGN_HEIGHT } from '../../config/display';
 import { GAME_IDENTITY, LEVEL_COUNT } from '../../config/identity';
 import { INVESTIGATION_COPY } from '../../config/investigationConfig';
@@ -97,6 +97,11 @@ export interface LaboratoryView {
  *
  * Once the laboratory discloses it, the constraint the machine is under is
  * printed above the machine.
+ *
+ * That is the arrangement in a wide window. The same elements are grouped so
+ * that a phone can lay them out its own way (see compositions.css): the
+ * console, the record — everything there is to read — and the actions make up
+ * one desk, which a phone sets beside the machine or beneath it.
  */
 export function createLaboratoryView(options: LaboratoryViewOptions): LaboratoryView {
   const { levelNumber, objective, inputLength, onToggleBit, onFocusBit, onAsk, onReturn, onConclude, onEnterQuantumMode } =
@@ -106,12 +111,19 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
   const { title } = GAME_IDENTITY;
   const { record } = INVESTIGATION_COPY;
 
-  const header = createElement('header', { className: 'laboratory__header' }, [
+  // The count of queries, again, for a layout in which the log may be scrolled out of sight (a phone's). The log is
+  // where it is read from and announced, so this copy is kept from screen readers rather than said twice.
+  const queryTally = createElement('span', { text: formatCount(0) });
+  const header = createElement('header', { className: 'view__header laboratory__header' }, [
     createElement('h1', {
       className: 'wordmark',
       text: `${title.article} ${title.name}`,
       attributes: { id: titleId },
     }),
+    createElement('p', { className: 'readout laboratory__tally', attributes: { 'aria-hidden': 'true' } }, [
+      createElement('span', { text: 'QUERIES' }),
+      queryTally,
+    ]),
     createElement('p', {
       className: 'readout',
       text: formatCounter(levelNumber, LEVEL_COUNT),
@@ -184,29 +196,33 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
   });
   quantumModeButton.hidden = true;
 
-  const footer = createElement('footer', { className: 'laboratory__footer' }, [
-    createPanel({ heading: 'OBJECTIVE', content: [objectiveText] }),
-    createElement('div', { className: 'laboratory__actions' }, [
-      quantumModeButton,
-      
-      createControlButton({
-        label: 'RETURN',
-        variant: 'quiet',
-        onActivate: onReturn,
-        shortcut: { label: 'ESC', ariaKey: 'Escape' },
-      }),
-    ]),
-    createPanel({ heading: 'SYSTEM STATUS', content: [systemStatus] }),
+  // Everything there is to read: what is known of the machine, what has been asked of it, and what is being asked for.
+  const readings = createElement('div', { className: 'view__body laboratory__record' }, [
+    createElement('div', { className: 'laboratory__constraint' }, [constraint.element]),
+    createElement('div', { className: 'laboratory__brief' }, [createPanel({ heading: 'OBJECTIVE', content: [objectiveText] })]),
+    createElement('aside', { className: 'laboratory__log' }, [experimentLog.element]),
+    createElement('aside', { className: 'laboratory__space' }, [inputSpace.element]),
+    createElement('div', { className: 'laboratory__status' }, [createPanel({ heading: 'SYSTEM STATUS', content: [systemStatus] })]),
+  ]);
+
+  const actions = createElement('div', { className: 'view__actions laboratory__actions' }, [
+    createControlButton({
+      label: 'RETURN',
+      variant: 'quiet',
+      onActivate: onReturn,
+      shortcut: { label: 'ESC', ariaKey: 'Escape' },
+    }),
+    quantumModeButton,
   ]);
 
   const element = createElement('section', { className: 'view laboratory', attributes: { 'aria-labelledby': titleId } }, [
     header,
     sceneDescription,
-    createElement('div', { className: 'laboratory__constraint' }, [constraint.element]),
-    createElement('div', { className: 'laboratory__console' }, [inputConsole, noteLine]),
-    createElement('aside', { className: 'laboratory__space' }, [inputSpace.element]),
-    createElement('aside', { className: 'laboratory__log' }, [experimentLog.element]),
-    footer,
+    createElement('div', { className: 'view__desk laboratory__desk' }, [
+      createElement('div', { className: 'laboratory__console' }, [inputConsole, noteLine]),
+      readings,
+      actions,
+    ]),
     announcer,
   ]);
   // The console sits a fixed distance below the machine, wherever the scene places the machine.
@@ -253,6 +269,7 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
 
     renderProgress(progress) {
       experimentLog.renderCount(progress.queryCount);
+      queryTally.textContent = formatCount(progress.queryCount);
       inputSpace.renderProgress(progress);
     },
 
@@ -287,6 +304,8 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
       // The way into Quantum Mode appears with the constraint, and not before (see `.control[hidden]`).
       quantumModeButton.hidden = !onEnterQuantumMode;
       if (arrive) {
+        // Where the record scrolls (a phone), the constraint is at its head: bring it into view to be seen arriving.
+        readings.scrollTop = 0;
         constraint.arrive();
         announce(PROMISE_COPY.announcement);
       }

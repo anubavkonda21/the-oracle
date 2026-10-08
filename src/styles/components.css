@@ -101,8 +101,12 @@
 /*
  * A control is out of use either because it is `disabled`, or — when it must
  * stay focusable for the keyboard — because it is marked aria-disabled.
+ *
+ * A control that can be used answers the keyboard's focus and a pointer over
+ * it in the same way. Only a pointer that can hover is answered, though: on a
+ * touch screen the "hover" a tap leaves behind would hold the control lit
+ * long after the finger had gone.
  */
-.control:not(:disabled, [aria-disabled='true']):hover,
 .control:not(:disabled, [aria-disabled='true']):focus-visible {
   border-color: var(--color-text-primary);
   background-color: var(--color-surface);
@@ -110,10 +114,23 @@
   transform: translateY(-1px);
 }
 
-.control:not(:disabled, [aria-disabled='true']):hover::before,
 .control:not(:disabled, [aria-disabled='true']):focus-visible::before {
   opacity: 1;
   transform: translateX(0);
+}
+
+@media (hover: hover) {
+  .control:not(:disabled, [aria-disabled='true']):hover {
+    border-color: var(--color-text-primary);
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    transform: translateY(-1px);
+  }
+
+  .control:not(:disabled, [aria-disabled='true']):hover::before {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .control:not(:disabled, [aria-disabled='true']):active {
@@ -130,8 +147,10 @@
   display: none;
 }
 
+/* Out of use: dimmer, and its outline broken — so that it is told apart by more than a shade. */
 .control:disabled,
 .control[aria-disabled='true'] {
+  border-style: dashed;
   border-color: var(--color-border);
   color: var(--color-text-secondary);
   opacity: 0.55;
@@ -198,6 +217,8 @@
 .panel__text {
   font-size: var(--type-body);
   line-height: 1.35;
+  /* Lines of even length: no last word left on a line of its own. */
+  text-wrap: balance;
 }
 
 .panel .status {

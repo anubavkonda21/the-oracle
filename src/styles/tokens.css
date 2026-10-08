@@ -51,6 +51,10 @@
    * Stage unit: the on-screen size of one design pixel of the 1440 × 900
    * frame. It is the same uniform scale Phaser applies to the canvas, so
    * interface and canvas always grow and shrink together.
+   *
+   * That holds in a wide window. On a phone the room is framed differently
+   * and the interface is laid out to be read and touched, not to match the
+   * canvas: compositions.css gives --u a value of its own there.
    */
   --u: min(100vw / 1440, 100vh / 900);
 
@@ -65,6 +69,26 @@
   /* Distance kept between the interface and the edges of the window. */
   --edge-x: calc(48 * var(--u));
   --edge-y: calc(36 * var(--u));
+
+  /*
+   * The design frame, and where the machine stands in it — the centre of
+   * the room, and of every composition of the interface (see
+   * compositions.css). The canvas half of this is in config/display.ts and
+   * world/roomLayout.ts; a unit test (tests/game/compositions.test.ts) fails
+   * if the two disagree.
+   */
+  --design-width: 1440;
+  --design-height: 900;
+  --machine-design-x: 720;
+  --machine-design-y: 340;
+  /* The machine's centre, in design units below the middle of the frame. */
+  --machine-offset-y: -110;
+
+  /* The parts of the screen a phone keeps for itself: a notch, rounded corners, the home indicator. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 
   /* Lighting on the room behind the stage: a trace of light in the middle, falling away into the corners. */
   --paper-light: color-mix(in srgb, white 3%, transparent);

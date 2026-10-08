@@ -11,6 +11,12 @@
   position: fixed;
   inset: 0;
   overflow: hidden;
+  /*
+   * The shell is the screen as the game has it, whatever a phone's browser
+   * is doing with its toolbars. Everything inside can be measured against it
+   * (the cq units in compositions.css) rather than against the viewport.
+   */
+  container-type: size;
   background-color: var(--color-background);
   /* Grain tile generated once at start-up by effects/paperGrain.ts. */
   background-image: var(--paper-grain, none);
@@ -80,6 +86,11 @@
     var(--color-dark-background);
 }
 
+/*
+ * The canvas is fitted to this element. In a wide window it is the whole
+ * window, and the room is shown entire; a phone frames the room differently
+ * by giving this element another size and place (see compositions.css).
+ */
 .stage__canvas {
   position: absolute;
   inset: 0;
@@ -101,6 +112,9 @@
 
 .stage__ui button {
   pointer-events: auto;
+  /* A tap is a tap: no grey flash over the control, and no wait to see whether a second one follows. */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 /* ---------- Start-up readout ---------- */

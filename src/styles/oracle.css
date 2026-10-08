@@ -114,20 +114,30 @@
   color: var(--color-background);
 }
 
-.bit:not([aria-disabled='true']):hover {
-  transform: translateY(-1px);
+/* Only a pointer that can hover is answered: a tap on a touch screen would leave the bit lifted. */
+@media (hover: hover) {
+  .bit:not([aria-disabled='true']):hover {
+    transform: translateY(-1px);
+  }
+
+  .bit[data-value='0']:not([aria-disabled='true']):hover {
+    background-color: var(--color-surface);
+  }
 }
 
-.bit[data-value='0']:not([aria-disabled='true']):hover {
-  background-color: var(--color-surface);
-}
-
+/* Pressed: the bit goes down under the finger, whichever way it is about to turn. */
 .bit:not([aria-disabled='true']):active {
-  transform: translateY(0);
+  transform: translateY(1px);
   transition-duration: 60ms;
 }
 
+.bit[data-value='0']:not([aria-disabled='true']):active {
+  background-color: var(--color-border);
+}
+
+/* Out of use while the machine works: dimmer, and its outline broken (as a control's is). */
 .bit[aria-disabled='true'] {
+  border-style: dashed;
   opacity: 0.55;
   cursor: not-allowed;
 }
@@ -144,7 +154,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bit:not([aria-disabled='true']):hover {
+  .bit:not([aria-disabled='true']):hover,
+  .bit:not([aria-disabled='true']):active {
     transform: none;
   }
 }

@@ -1,12 +1,22 @@
 /*
- * Per-scene layouts. A view fills the whole window; corner elements keep a
- * fixed distance from the window edges, central elements stay centred. All
- * sizes use the stage unit (--u), so a view scales exactly like the canvas.
+ * Per-scene interface: what each scene's own elements look like.
+ *
+ * Where they go is a separate matter, and is in compositions.css: the same
+ * elements are arranged one way in a wide window and another on a phone.
+ * Every view is built from the same few parts —
+ *
+ *   .view__header   who and where: a line across the top
+ *   .view__desk     everything else the scene has to show or offer
+ *   .view__body       what there is to read
+ *   .view__actions    what there is to do
+ *
+ * — so that a composition can place them without knowing the scene. The
+ * machine is on the canvas, in the middle of the room, and no view prints
+ * anything over it.
  */
 
 .view {
   position: absolute;
-  inset: 0;
 }
 
 /* A view only ever receives focus from script (see UiLayer), as a starting point for Tab — not as a control. */
@@ -14,61 +24,40 @@
   outline: none;
 }
 
+.view__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: max(12px, calc(24 * var(--u)));
+}
+
 /*
  * Right-aligned machine text: letter-spacing leaves a gap after the last
  * letter, so pull it back to keep the visible edge exactly on the margin.
  */
-.main-menu__status .status,
-.main-menu__state,
-.laboratory__header .readout {
+.view__header > :last-child:not(:first-child),
+.main-menu__state {
   margin-right: calc(-1 * var(--tracking-machine));
 }
 
+/* The game's name as a running head: the laboratory's, and the mode's in Quantum Mode. */
+.wordmark {
+  font-size: var(--type-small);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.26em;
+  white-space: nowrap;
+}
+
 /* ---------- Main menu ---------- */
-
-.main-menu__identifier {
-  position: absolute;
-  top: var(--edge-y);
-  left: var(--edge-x);
-}
-
-.main-menu__status {
-  position: absolute;
-  top: var(--edge-y);
-  right: var(--edge-x);
-  display: flex;
-}
-
-.main-menu__state {
-  position: absolute;
-  right: var(--edge-x);
-  bottom: var(--edge-y);
-}
-
-/* Title group: centred in a box that ends at 86% of the height, which puts its middle at 43%. */
-.main-menu__identity {
-  position: absolute;
-  inset: 0 0 14% 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.main-menu__action {
-  position: absolute;
-  top: 61.75%;
-  right: 0;
-  left: 0;
-  display: flex;
-  justify-content: center;
-}
 
 /*
  * Title. The article sits small and widely spaced above the name, like the
  * designation line on a classified file. Each line is padded on the left by
  * its own letter-spacing so the letters, not the trailing gap, are centred.
+ *
+ * It is set beneath the machine, the size of a plate on an instrument: the
+ * machine is what the screen is of, and the name is what it is called.
  */
 .title {
   display: flex;
@@ -80,22 +69,22 @@
 
 .title__article {
   padding-left: 0.72em;
-  font-size: calc(22 * var(--u));
+  font-size: max(11px, calc(15 * var(--u)));
   font-weight: 500;
   letter-spacing: 0.72em;
 }
 
 .title__name {
-  margin-top: calc(16 * var(--u));
-  padding-left: 0.15em;
-  font-size: calc(104 * var(--u));
+  margin-top: calc(14 * var(--u));
+  padding-left: 0.16em;
+  font-size: calc(64 * var(--u));
   font-weight: 600;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.16em;
 }
 
 .tagline {
-  margin-top: calc(36 * var(--u));
-  font-size: var(--type-lead);
+  margin-top: calc(24 * var(--u));
+  font-size: var(--type-body);
   line-height: 1.3;
 }
 
@@ -104,7 +93,7 @@
   color: var(--color-text-secondary);
 }
 
-/* The second line answers the first: set apart by a hairline, and in full black. */
+/* The second line answers the first: set apart by a hairline, and in the brighter of the two text colours. */
 .tagline__line + .tagline__line {
   color: var(--color-text-primary);
 }
@@ -114,80 +103,30 @@
   display: block;
   width: calc(24 * var(--u));
   height: var(--hairline);
-  margin: calc(12 * var(--u)) auto;
+  margin: calc(10 * var(--u)) auto;
   background: var(--color-border);
 }
 
 /* ---------- Laboratory ---------- */
 
-.laboratory__header {
-  position: absolute;
-  top: var(--edge-y);
-  right: var(--edge-x);
-  left: var(--edge-x);
+/* The count of queries as a running figure: label, then number. */
+.laboratory__tally {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  gap: 0.9em;
 }
 
-.wordmark {
-  font-size: var(--type-small);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.26em;
-}
-
-.laboratory__footer {
-  position: absolute;
-  right: var(--edge-x);
-  bottom: var(--edge-y);
-  left: var(--edge-x);
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  /* Keeps the objective, which can run to two lines in a narrow window, clear of the controls beside it. */
-  column-gap: max(16px, calc(24 * var(--u)));
-  align-items: end;
-}
-
-.laboratory__footer > :first-child {
-  justify-self: start;
-}
-
-.laboratory__footer > :last-child {
-  justify-self: end;
-}
-
-.laboratory__actions {
-  display: flex;
-  gap: calc(12 * var(--u));
-}
-
-/*
- * The input console sits directly beneath the machine. The stage is always
- * centred in the window, so "50%" is the middle of the design frame and the
- * machine's offset from it (set by the view) can be added in stage units.
- */
-.laboratory__console {
-  position: absolute;
-  top: calc(50% + (var(--machine-offset-y) + 206) * var(--u));
-  right: 0;
-  left: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.laboratory__tally > :last-child {
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 /*
  * The laboratory's remark on the investigation: one quiet line beneath the
- * console, in the human voice. It follows the console in the flow, so it
- * stays clear of it however tall the console is in a small window.
+ * console, in the human voice.
  */
 .laboratory__note {
-  max-width: max(320px, calc(540 * var(--u)));
-  margin-top: calc(30 * var(--u));
   color: var(--color-text-secondary);
   line-height: 1.4;
-  text-align: center;
   /* Even line lengths, should it ever run to two lines. */
   text-wrap: balance;
 }
@@ -204,167 +143,310 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .laboratory__note[data-arrived] {
-    animation: none;
-  }
-}
-
-/*
- * The constraint the machine is under is printed above the machine it
- * describes. Its bottom edge keeps a fixed distance from the top of the
- * machine, and it grows upward from there, into the band between the header's
- * two corners. It is wider than the machine: the panels on either side start
- * lower down.
- */
-.laboratory__constraint {
-  position: absolute;
-  right: 0;
-  bottom: calc(50% - (var(--machine-offset-y) - 172) * var(--u));
-  left: 0;
-  /* Wide enough for each rule to be said on one line. */
-  width: min(100% - 2 * var(--edge-x), max(680px, calc(860 * var(--u))));
-  margin: 0 auto;
-}
-
 /* The objective changing. The new one fades in where the old one was. */
 .panel__text[data-arrived] {
   animation: note-arrive 520ms var(--ease-precise);
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .laboratory__note[data-arrived],
   .panel__text[data-arrived] {
     animation: none;
   }
 }
 
-/*
- * The record flanks the machine: the map of the input space down the
- * left-hand side and the experiment log down the right, both starting level
- * with the top of the machine.
- */
-.laboratory__space,
-.laboratory__log {
-  position: absolute;
-  top: calc(50% + (var(--machine-offset-y) - 150) * var(--u));
-  width: max(236px, calc(296 * var(--u)));
-}
-
-.laboratory__space {
-  left: var(--edge-x);
-}
-
-.laboratory__log {
-  right: var(--edge-x);
-}
-
 /* ---------- Quantum Mode ---------- */
 
 /*
- * The machine stands in the middle of the stage, where it stood in the
- * laboratory, and the run is seen on it. The interface keeps clear of it:
- * the name of the stage above, the reading below, the controls at the foot.
+ * The one colour the room has not shown before is kept to what says, in this
+ * scene, that this is another mode: its name, and the mark of the stage the
+ * run has reached. Everything that is read — the name of the stage, the
+ * reading — stays in the white of the instruments.
  */
-.q-view {
+.q-view .wordmark {
   color: var(--color-quantum-indigo);
-  text-align: center;
 }
 
-.q-header {
-  position: absolute;
-  top: var(--edge-y);
-  left: var(--edge-x);
+/*
+ * In this scene the room is dark and the panels are read by the machine's
+ * own light: they are darker than the laboratory's, and let the room show
+ * through a little, so that they sit in it rather than on it.
+ */
+.q-view .panel {
+  background: color-mix(in srgb, var(--color-background) 80%, transparent);
 }
 
+/* How far the run has got, as a running figure: a word, then a count. */
+.q-count {
+  display: flex;
+  gap: 0.9em;
+}
+
+.q-count > :last-child {
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The name of the stage the run has reached. */
 .q-stage {
-  position: absolute;
-  right: 0;
-  /* Its baseline sits a fixed distance above the top of the machine. */
-  bottom: calc(50% - (var(--machine-offset-y) - 186) * var(--u));
-  left: 0;
-  margin: 0;
   font-size: var(--type-lead);
+  font-weight: 500;
   line-height: 1;
   letter-spacing: 0.2em;
-  /* Letter-spacing leaves a gap after the last letter; this keeps the word centred. */
   text-indent: 0.2em;
   color: var(--color-text-primary);
 }
 
-/* Begins a fixed distance below the base the machine stands on. */
-.q-readout {
-  position: absolute;
-  top: calc(50% + (var(--machine-offset-y) + 200) * var(--u));
-  right: 0;
-  left: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.q-result p {
-  margin: calc(8 * var(--u)) 0;
+/*
+ * The run as a sequence of stages. How each stands is told by the shape of
+ * its mark as well as by its weight and colour: a ring for a stage still to
+ * come, a diamond for the one in progress, a filled dot for one that is done.
+ */
+.q-sequence__stages {
   font-family: var(--font-machine);
-  font-size: var(--type-body);
-  line-height: 1.2;
-  letter-spacing: 0.1em;
+  font-size: var(--type-micro);
+  line-height: 1;
+  letter-spacing: var(--tracking-machine);
 }
 
-.q-explanation {
-  margin-top: calc(22 * var(--u));
-  max-width: max(320px, calc(600 * var(--u)));
-  line-height: 1.5;
+.q-sequence__stage {
+  display: grid;
+  grid-template-columns: 2.4em 1.7em 1fr;
+  align-items: center;
+  padding: calc(9 * var(--u)) 0;
+  color: var(--color-text-secondary);
+  transition: color var(--motion-control) var(--ease-precise);
+}
+
+.q-sequence__stage + .q-sequence__stage {
+  border-top: var(--hairline) solid var(--color-border);
+}
+
+.q-sequence__mark {
+  box-sizing: border-box;
+  width: 0.66em;
+  height: 0.66em;
+  border: var(--hairline) solid currentColor;
+  border-radius: 50%;
+}
+
+.q-sequence__stage[data-state='done'] {
+  color: var(--color-text-primary);
+}
+
+.q-sequence__stage[data-state='done'] .q-sequence__mark {
+  background: currentColor;
+}
+
+.q-sequence__stage[data-state='current'] {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.q-sequence__stage[data-state='current'] .q-sequence__mark {
+  border-color: var(--color-quantum-bright);
+  border-radius: 1px;
+  background: var(--color-quantum-bright);
+  transform: rotate(45deg);
+}
+
+/* What the run read: a label, and the figure against it. */
+.q-result {
+  font-family: var(--font-machine);
+  font-size: var(--type-micro);
+  line-height: 1;
+  letter-spacing: var(--tracking-machine);
   color: var(--color-text-secondary);
 }
 
-.q-actions {
-  position: absolute;
-  right: 0;
-  bottom: var(--edge-y);
-  left: 0;
+.q-result__row {
   display: flex;
-  justify-content: center;
-  gap: calc(24 * var(--u));
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.4em;
+  padding: calc(9 * var(--u)) 0;
 }
 
-/* ---------- Reveal Mode ---------- */
-
-.reveal-view {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+.q-result__row:first-child {
+  padding-top: 0;
 }
 
-.reveal-container p {
-  margin: calc(24 * var(--u)) 0;
-  font-size: var(--type-lead);
-  letter-spacing: 0.1em;
+.q-result__row:last-child {
+  padding-bottom: 0;
 }
 
-.reveal-view .control {
-  margin-top: calc(64 * var(--u));
+.q-result__row + .q-result__row {
+  border-top: var(--hairline) solid var(--color-border);
 }
 
-/* ---------- Credits Mode ---------- */
-
-.credits-view {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: calc(64 * var(--u)) 0;
-  overflow-y: auto;
-}
-
-.credits-container {
-  margin-bottom: calc(48 * var(--u));
-}
-
-.credits-container p {
-  margin: calc(12 * var(--u)) 0;
-  font-size: var(--type-body);
+.q-result__value {
+  /* The last figure, not the gap its letter-spacing leaves after it, ends on the margin. */
+  margin-right: calc(-1 * var(--tracking-machine));
   color: var(--color-text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The reading itself is the largest figure in the panel. */
+.q-result__row:first-child .q-result__value {
+  font-size: var(--type-lead);
+}
+
+/* What to make of the reading, in the human voice. The last line names what was run. */
+.q-explanation {
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.q-explanation p + p {
+  margin-top: calc(4 * var(--u));
+}
+
+.q-explanation p:last-child {
+  margin-top: calc(12 * var(--u));
+  color: var(--color-text-primary);
+}
+
+/* ---------- Reveal ---------- */
+
+/*
+ * The finding, set out as one: what was read, in the machine's voice; then
+ * what follows from it, at the size of the title — the one statement the
+ * whole investigation was for.
+ */
+.reveal__finding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.reveal__value {
+  margin-top: calc(14 * var(--u));
+  padding-left: 0.34em;
+  color: var(--color-text-primary);
+  font-size: calc(34 * var(--u));
+  font-weight: 500;
+  letter-spacing: 0.34em;
+  font-variant-numeric: tabular-nums;
+}
+
+.reveal__reading {
+  margin-top: calc(14 * var(--u));
+  color: var(--color-text-primary);
+}
+
+/* The step from the reading to the conclusion: a word between two rules. */
+.reveal__therefore {
+  display: flex;
+  align-items: center;
+  gap: 1.4em;
+  margin-top: calc(28 * var(--u));
+  padding-left: var(--tracking-machine);
+}
+
+.reveal__therefore::before,
+.reveal__therefore::after {
+  content: '';
+  width: calc(44 * var(--u));
+  height: var(--hairline);
+  background: var(--color-border);
+}
+
+.reveal__verdict {
+  margin-top: calc(20 * var(--u));
+  padding-left: 0.2em;
+  color: var(--color-text-primary);
+  font-family: var(--font-human);
+  font-size: calc(52 * var(--u));
+  font-weight: 600;
+  letter-spacing: 0.2em;
+}
+
+/*
+ * Each part of the finding, and then the way on, is out of sight until the
+ * scene shows it. A control that has not been shown cannot be pressed.
+ */
+.reveal__step {
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+.reveal__step[data-shown] {
+  opacity: 1;
+}
+
+.control.reveal__step {
+  transition:
+    opacity 1s ease,
+    background-color var(--motion-control) var(--ease-precise),
+    border-color var(--motion-control) var(--ease-precise),
+    color var(--motion-control) var(--ease-precise),
+    transform var(--motion-control) var(--ease-precise);
+}
+
+.control.reveal__step:not([data-shown]) {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal__step,
+  .control.reveal__step {
+    transition: none;
+  }
+}
+
+/* ---------- Credits ---------- */
+
+/*
+ * The last page of the record: entries under headings, each section ruled
+ * off at its head the way a section of a printed sheet is.
+ */
+.credits__section {
+  padding-top: calc(14 * var(--u));
+  border-top: var(--hairline) solid var(--color-border);
+}
+
+.credits__section .readout {
+  line-height: 1.9;
+  white-space: normal;
+}
+
+.credits__name {
+  margin-bottom: calc(8 * var(--u));
+  color: var(--color-text-primary);
+  font-size: var(--type-small);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.26em;
+}
+
+.credits__section .credits__heading {
+  margin-bottom: calc(6 * var(--u));
+  color: var(--color-text-primary);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.credits__entries {
+  list-style: none;
+}
+
+.credits__close {
+  display: flex;
+  justify-content: space-between;
+  column-gap: 2em;
+  margin-top: calc(20 * var(--u));
+  padding-top: calc(14 * var(--u));
+  border-top: var(--hairline) solid var(--color-border);
+}
+
+.credits__close > :last-child {
+  margin-right: calc(-1 * var(--tracking-machine));
+  color: var(--color-text-primary);
+}
+
+.credits__record:focus-visible {
+  outline-offset: -2px;
 }

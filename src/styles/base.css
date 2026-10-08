@@ -30,6 +30,14 @@ p {
   font-weight: inherit;
 }
 
+/* Lists in the interface are sequences and sheets of entries, not bulleted prose. */
+ol,
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 button {
   font: inherit;
   color: inherit;
