@@ -89,6 +89,12 @@ export class LaboratoryScene extends StageScene {
       onFireQuantumProbe: () => this.fireQuantumProbe(),
       onReturn: () => this.returnToMenu(),
       onConclude: (kind) => this.conclude(kind),
+      onSkipToQuantum: () => {
+        this.stopTimer();
+        this.isProcessing = false;
+        this.stateMachine.startLevel(4);
+        this.setupCurrentBoxUI();
+      },
     });
 
     this.enterStage(this.view.element);
@@ -101,6 +107,9 @@ export class LaboratoryScene extends StageScene {
   private setupCurrentBoxUI(): void {
     const box = this.stateMachine.box;
     const cfg = this.stateMachine.config;
+
+    this.isProcessing = false;
+    this.view.setProcessing(false);
 
     bindInvestigationOracle(this.investigation, box.gameOracle);
 

@@ -17,6 +17,8 @@ export interface InputSpaceMap {
   renderProgress(progress: InvestigationProgress): void;
   /** Briefly reveals all cells on the grid with their true outputs for error visualization. */
   revealAll(outputs: Bit[]): void;
+  /** Clears revealed answers and resets untested cells back to blank/neutral. */
+  hideAll(): void;
   /** Animates all cells lighting up in superposition. */
   setSuperposition(active: boolean): void;
   /** Resets the map for a new box or bit length. */
@@ -93,6 +95,7 @@ export function createInputSpaceMap(initialInputLength: number): InputSpaceMap {
 
       cell.textContent = String(query.output);
       cell.dataset.output = String(query.output);
+      cell.classList.remove('cell--revealed');
       cell.toggleAttribute('data-arrived', animate);
     },
 
@@ -120,6 +123,15 @@ export function createInputSpaceMap(initialInputLength: number): InputSpaceMap {
       });
     },
 
+    hideAll() {
+      cells.forEach((cell) => {
+        cell.textContent = '';
+        cell.removeAttribute('data-output');
+        cell.removeAttribute('data-arrived');
+        cell.classList.remove('cell--revealed', 'cell--superposed');
+      });
+    },
+
     setSuperposition(active) {
       grid.classList.toggle('quantum-superposition', active);
       cells.forEach((c) => c.classList.toggle('cell--superposed', active));
@@ -128,6 +140,8 @@ export function createInputSpaceMap(initialInputLength: number): InputSpaceMap {
     reset(newLength) {
       const targetLength = newLength ?? currentLength;
       buildGrid(targetLength);
+      this.hideAll();
+      grid.classList.remove('quantum-superposition');
       this.renderProgress({
         queryCount: 0,
         testedCount: 0,

@@ -36,6 +36,7 @@ export interface LaboratoryViewOptions {
   onFireQuantumProbe: () => void;
   onReturn: () => void;
   onConclude: (kind: OracleKind) => void;
+  onSkipToQuantum?: () => void;
 }
 
 export interface LaboratoryView {
@@ -102,16 +103,28 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
     muteBtn.textContent = isMuted ? 'SOUND: OFF' : 'SOUND: ON';
   });
 
+  const devQuantumBtn = createElement('button', {
+    className: 'dev-skip-btn',
+    text: 'DEV: SKIP TO QUANTUM',
+    attributes: { type: 'button', 'aria-label': 'Skip to Quantum Probe level' },
+  });
+  devQuantumBtn.addEventListener('click', () => {
+    if (options.onSkipToQuantum) {
+      options.onSkipToQuantum();
+    }
+  });
+
   const header = createElement('header', { className: 'laboratory__header' }, [
     createElement('h1', {
       className: 'wordmark',
       text: `${title.article} ${title.name}`,
       attributes: { id: titleId },
     }),
-    createElement('div', { attributes: { style: 'display: flex; align-items: center; gap: 1rem;' } }, [
+    createElement('div', { attributes: { style: 'display: flex; align-items: center; gap: 0.75rem;' } }, [
       levelText,
       timerText,
       muteBtn,
+      devQuantumBtn,
     ]),
   ]);
 
@@ -354,6 +367,7 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
       } else {
         classifyBtn0.classList.remove('pulse-attention');
         classifyBtn1.classList.remove('pulse-attention');
+        setUnavailable(askButton, false);
       }
     },
 
@@ -399,6 +413,7 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
       detectorReadout.style.display = 'none';
       detectorReadout.textContent = '';
       this.setPulseClassify(false);
+      this.setProcessing(false);
     },
 
     clearLog() {
@@ -407,6 +422,7 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
       detectorReadout.style.display = 'none';
       detectorReadout.textContent = '';
       this.setPulseClassify(false);
+      this.setProcessing(false);
     },
   };
 }
