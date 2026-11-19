@@ -10,7 +10,7 @@ export interface QuantumViewOptions {
 
 export interface QuantumView {
   readonly element: HTMLElement;
-  showResult(result: DeutschJozsaResult, isFirstRun: boolean): void;
+  showResult(result: DeutschJozsaResult): void;
   setStage(stage: string): void;
   renderState(step: DeutschJozsaStep): void;
   setRunDisabled(disabled: boolean): void;
@@ -19,7 +19,7 @@ export interface QuantumView {
 export function createQuantumView({ onRun, onNext }: QuantumViewOptions): QuantumView {
   const resultContainer = createElement('div', { className: 'q-result' });
   const stageLabel = createElement('h2', { className: 'q-stage', text: 'READY' });
-  const explanation = createElement('div', { className: 'q-explanation' });
+  const detectorContainer = createElement('div', { className: 'q-detector-box' });
 
   const runButton = createControlButton({
     label: Q_COPY.run,
@@ -31,23 +31,21 @@ export function createQuantumView({ onRun, onNext }: QuantumViewOptions): Quantu
   });
   nextButton.hidden = true;
 
-  
   const stateContainer = createElement('div', { className: 'q-state' });
-  const qubits = Array.from({ length: 6 }, () => createElement('div', { className: 'q-node', text: '?' }));
-  qubits.forEach(q => stateContainer.appendChild(q));
+  const qubits = Array.from({ length: 6 }, () =>
+    createElement('div', { className: 'q-node', text: '·' }),
+  );
+  qubits.forEach((q) => stateContainer.appendChild(q));
 
   const element = createElement('section', { className: 'view q-view' }, [
     createElement('div', { className: 'q-header' }, [
-      createElement('h1', { className: 'wordmark', text: Q_COPY.mode })
+      createElement('h1', { className: 'wordmark', text: Q_COPY.mode }),
     ]),
     stageLabel,
     stateContainer,
+    detectorContainer,
     resultContainer,
-
-    explanation,
-    createElement('div', { className: 'q-actions' }, [
-      runButton, nextButton
-    ])
+    createElement('div', { className: 'q-actions' }, [runButton, nextButton]),
   ]);
 
   return {
@@ -67,36 +65,33 @@ export function createQuantumView({ onRun, onNext }: QuantumViewOptions): Quantu
         runButton.style.pointerEvents = 'auto';
       }
     },
+
     renderState(step) {
       const id = step.id;
       if (id === 'prepared') {
-        qubits.forEach(q => q.textContent = '0');
+        qubits.forEach((q) => (q.textContent = '0'));
       } else if (id === 'superposed' || id === 'interfered') {
-        qubits.forEach(q => q.textContent = 'ψ');
+        // Purely visual node indicator (no text lecture or psi)
+        qubits.forEach((q) => (q.textContent = '∿'));
       } else if (id === 'queried') {
-        qubits.forEach(q => q.textContent = '±');
-      } else if (id === 'measured') {
-         // Don't update here, it will be updated by showResult
+        qubits.forEach((q) => (q.textContent = '±'));
       }
     },
-    showResult(result, isFirstRun) {
 
+    showResult(result) {
       resultContainer.innerHTML = '';
       const bits = result.measuredLabel.split('');
-      qubits.forEach((q, i) => q.textContent = bits[i] ?? '');
-      resultContainer.appendChild(createElement('p', { text: `MEASUREMENT: ${result.measuredLabel}` }));
-      resultContainer.appendChild(createElement('p', { text: `ORACLE CLASSIFICATION: ${result.verdict.toUpperCase()}` }));
-      resultContainer.appendChild(createElement('p', { text: `${Q_COPY.queries}: ${result.oracleQueries}` }));
+      qubits.forEach((q, i) => (q.textContent = bits[i] ?? '0'));
 
-      if (isFirstRun) {
-        explanation.innerHTML = '';
-        explanation.appendChild(createElement('p', { text: Q_COPY.exp1 }));
-        explanation.appendChild(createElement('p', { text: Q_COPY.exp2 }));
-        explanation.appendChild(createElement('p', { text: Q_COPY.name }));
-      }
-      
+      const isZero = result.measuredInput === 0;
+      const statusText = isZero
+        ? '000000 DETECTOR: LIT'
+        : `000000 DETECTOR: CANCELLED (SCATTER: ${result.measuredLabel})`;
+
+      detectorContainer.textContent = statusText;
+
       runButton.querySelector('.control__label')!.textContent = 'RUN AGAIN';
       nextButton.hidden = false;
-    }
+    },
   };
 }

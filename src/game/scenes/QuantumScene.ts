@@ -14,7 +14,6 @@ export interface QuantumEntry {
 export class QuantumScene extends StageScene {
   private view!: QuantumView;
   private hiddenFunction!: BooleanFunction;
-  private hasRun = false;
 
   constructor() {
     super(SCENE_KEYS.quantum);
@@ -25,55 +24,64 @@ export class QuantumScene extends StageScene {
 
     this.view = createQuantumView({
       onRun: () => this.runAlgorithm(),
-      onNext: () => this.leaveTo(SCENE_KEYS.reveal, { result: this.result }),
+      onNext: () => this.leaveTo(SCENE_KEYS.laboratory),
     });
 
     this.enterStage(this.view.element, 'dark');
   }
 
-
   private isRunning = false;
-  private result: any = null;
 
   private runAlgorithm(): void {
     if (this.isRunning) return;
     this.isRunning = true;
     this.view.setRunDisabled(true);
-    
+
     const oracle = createOracle(this.hiddenFunction);
     const result = runDeutschJozsa(oracle);
-    this.result = result;
-    
+
     const steps = result.steps;
     const delays: Record<string, number> = {
-      'prepared': 500,
-      'superposed': 1500,
-      'ancilla-ready': 1500,
-      'queried': 2500,
-      'interfered': 3500,
-      'measured': 4500,
+      prepared: 400,
+      superposed: 1000,
+      'ancilla-ready': 1000,
+      queried: 1600,
+      interfered: 2200,
+      measured: 2800,
     };
-    
+
     for (const step of steps) {
-       const d = delays[step.id] || 0;
-       this.afterDelay(d, () => {
-         const stageName = step.id === 'prepared' ? Q_COPY.prep : step.id === 'superposed' ? Q_COPY.sup : step.id === 'queried' ? Q_COPY.or : step.id === 'interfered' ? Q_COPY.inter : step.id === 'measured' ? Q_COPY.meas : '';
-         if (stageName) this.view.setStage(stageName);
-         this.view.renderState(step);
-         if (step.id === 'measured') audioManager.playMeasurement();
-         else audioManager.playQuantumStep(step.id);
-       });
+      const d = delays[step.id] || 0;
+      this.afterDelay(d, () => {
+        const stageName =
+          step.id === 'prepared'
+            ? Q_COPY.prep
+            : step.id === 'superposed'
+              ? Q_COPY.sup
+              : step.id === 'queried'
+                ? Q_COPY.or
+                : step.id === 'interfered'
+                  ? Q_COPY.inter
+                  : step.id === 'measured'
+                    ? Q_COPY.meas
+                    : '';
+        if (stageName) this.view.setStage(stageName);
+        this.view.renderState(step);
+        if (step.id === 'measured') {
+          if (result.measuredInput === 0) {
+            audioManager.playConstructiveSpike();
+          } else {
+            audioManager.playDestructiveCancel();
+          }
+        }
+      });
     }
-    
-    this.afterDelay(5500, () => {
-      audioManager.playResult();
-      this.view.showResult(result, !this.hasRun);
-      this.view.setStage('RESULT');
-      this.hasRun = true;
+
+    this.afterDelay(3400, () => {
+      this.view.showResult(result);
+      this.view.setStage('DETECTOR READY');
       this.isRunning = false;
       this.view.setRunDisabled(false);
     });
   }
-
 }
-

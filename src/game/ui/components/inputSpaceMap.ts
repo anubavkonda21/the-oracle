@@ -1,4 +1,5 @@
 import { formatCount } from '../../../utils/format';
+import type { Bit } from '../../../quantum';
 import { INVESTIGATION_COPY } from '../../config/investigationConfig';
 import type { OracleQuery } from '../../systems/oracle/GameOracle';
 import type { InvestigationProgress } from '../../systems/oracle/Investigation';
@@ -14,48 +15,65 @@ export interface InputSpaceMap {
   setCursor(input: string): void;
   /** Draws how many inputs have been tested and how many have not. */
   renderProgress(progress: InvestigationProgress): void;
+  /** Briefly reveals all cells on the grid with their true outputs for error visualization. */
+  revealAll(outputs: Bit[]): void;
+  /** Animates all cells lighting up in superposition. */
+  setSuperposition(active: boolean): void;
+  /** Resets the map for a new box or bit length. */
+  reset(length?: number): void;
 }
 
 /**
- * A picture of everything the machine could be asked (styles: `.input-space`
- * in oracle.css): one cell for every possible input, in counting order from
- * the first input at the top left to the last at the bottom right. A cell is
- * empty until its input has been tested, and from then on shows the answer.
- * One cell carries a marker: the input the player is composing.
- *
- * Like the bit input, it holds no state of its own and draws what it is told.
- * It is a picture rather than a control — nothing in it takes focus — and
- * everything it shows is also in the experiment log, as text.
- *
- * It draws the space cell by cell, which suits the prototype's six bits (64
- * cells). A much longer input would need a different picture.
+ * A picture of everything the machine could be asked: one cell for every possible input.
+ * Supports dynamic bit lengths (2-bit: 4 cells, 4-bit: 16 cells, 6-bit: 64 cells),
+ * error reveal, and superposition illumination.
  */
-export function createInputSpaceMap(inputLength: number): InputSpaceMap {
+export function createInputSpaceMap(initialInputLength: number): InputSpaceMap {
   const copy = INVESTIGATION_COPY.inputSpace;
-  const size = inputSpaceSize(inputLength);
-  const { columns } = inputSpaceLayout(inputLength);
+  let currentLength = initialInputLength;
+  let size = inputSpaceSize(currentLength);
+  let layout = inputSpaceLayout(currentLength);
 
-  const cells = Array.from({ length: size }, () => createElement('span', { className: 'input-space__cell' }));
-  const grid = createElement('div', { className: 'input-space__grid' }, cells);
-  grid.style.setProperty('--columns', String(columns));
+  const grid = createElement('div', { className: 'input-space__grid' });
+  let cells: HTMLSpanElement[] = [];
 
-  // To assistive technology this is one picture with a description in words (see `renderProgress`), not 64 separate cells.
+  const startEnd = createElement('span', { className: 'input-space__end' });
+  const lastEnd = createElement('span', { className: 'input-space__end input-space__end--last' });
+
   const map = createElement('div', { className: 'input-space__map', attributes: { role: 'img' } }, [
-    createElement('span', { className: 'input-space__end', text: inputAt(0, inputLength) }),
+    startEnd,
     grid,
-    createElement('span', { className: 'input-space__end input-space__end--last', text: inputAt(size - 1, inputLength) }),
+    lastEnd,
   ]);
 
   const tested = createElement('span');
   const untested = createElement('span');
+  const bitsSummary = createElement('span');
+  const possibleInputsSummary = createElement('span');
+
+  function buildGrid(length: number): void {
+    currentLength = length;
+    size = inputSpaceSize(currentLength);
+    layout = inputSpaceLayout(currentLength);
+
+    grid.innerHTML = '';
+    cells = Array.from({ length: size }, () => createElement('span', { className: 'input-space__cell' }));
+    cells.forEach((c) => grid.appendChild(c));
+    grid.style.setProperty('--columns', String(layout.columns));
+
+    startEnd.textContent = inputAt(0, currentLength);
+    lastEnd.textContent = inputAt(size - 1, currentLength);
+
+    bitsSummary.textContent = copy.bits(currentLength);
+    possibleInputsSummary.textContent = copy.possibleInputs(size);
+  }
+
+  buildGrid(initialInputLength);
 
   const element = createPanel({
     heading: copy.heading,
     content: [
-      createElement('p', { className: 'input-space__summary' }, [
-        createElement('span', { text: copy.bits(inputLength) }),
-        createElement('span', { text: copy.possibleInputs(size) }),
-      ]),
+      createElement('p', { className: 'input-space__summary' }, [bitsSummary, possibleInputsSummary]),
       map,
       createElement('div', { className: 'input-space__counts' }, [
         createElement('p', { className: 'input-space__count' }, [createElement('span', { text: copy.tested }), tested]),
@@ -69,11 +87,10 @@ export function createInputSpaceMap(inputLength: number): InputSpaceMap {
     element,
 
     mark(query, animate = true) {
-      const cell = cells[inputIndex(query.input)];
-      if (!cell) {
-        return;
-      }
-      // The digit is printed as well as shown by the fill, so the answer never depends on telling light from dark.
+      const idx = inputIndex(query.input);
+      const cell = cells[idx];
+      if (!cell) return;
+
       cell.textContent = String(query.output);
       cell.dataset.output = String(query.output);
       cell.toggleAttribute('data-arrived', animate);
@@ -81,13 +98,42 @@ export function createInputSpaceMap(inputLength: number): InputSpaceMap {
 
     setCursor(input) {
       grid.querySelector('[data-cursor]')?.removeAttribute('data-cursor');
-      cells[inputIndex(input)]?.setAttribute('data-cursor', '');
+      if (input.length === currentLength) {
+        cells[inputIndex(input)]?.setAttribute('data-cursor', '');
+      }
     },
 
     renderProgress(progress) {
       tested.textContent = formatCount(progress.testedCount);
       untested.textContent = formatCount(progress.untestedCount);
       map.setAttribute('aria-label', copy.description(progress));
+    },
+
+    revealAll(outputs) {
+      outputs.forEach((output, idx) => {
+        const cell = cells[idx];
+        if (cell) {
+          cell.textContent = String(output);
+          cell.dataset.output = String(output);
+          cell.classList.add('cell--revealed');
+        }
+      });
+    },
+
+    setSuperposition(active) {
+      grid.classList.toggle('quantum-superposition', active);
+      cells.forEach((c) => c.classList.toggle('cell--superposed', active));
+    },
+
+    reset(newLength) {
+      const targetLength = newLength ?? currentLength;
+      buildGrid(targetLength);
+      this.renderProgress({
+        queryCount: 0,
+        testedCount: 0,
+        untestedCount: size,
+        inputSpaceSize: size,
+      });
     },
   };
 

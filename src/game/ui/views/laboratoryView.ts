@@ -1,6 +1,6 @@
-import { formatCounter } from '../../../utils/format';
+import { audioManager } from '../../audio/AudioManager';
 import { DESIGN_HEIGHT } from '../../config/display';
-import { GAME_IDENTITY, LEVEL_COUNT } from '../../config/identity';
+import { GAME_IDENTITY } from '../../config/identity';
 import { INVESTIGATION_COPY } from '../../config/investigationConfig';
 import { MACHINE_CENTER_Y } from '../../config/oracleConfig';
 import { PROMISE_COPY } from '../../config/promiseConfig';
@@ -9,102 +9,98 @@ import type { InvestigationProgress } from '../../systems/oracle/Investigation';
 import { toBinaryString, type BinaryInputState } from '../../systems/oracle/binaryInput';
 import { inputSpaceSize } from '../../systems/oracle/inputSpace';
 import type { InvestigationNote } from '../../systems/oracle/investigationNotes';
-import type { OracleKind } from '../../systems/oracle/oracleKind';
-import { createBitInput } from '../components/bitInput';
+import { ORACLE_KINDS, type OracleKind } from '../../systems/oracle/oracleKind';
+import { createBitInput, type BitInput } from '../components/bitInput';
 import { createClassificationRecord, type ClassificationState } from '../components/classificationRecord';
 import { createConstraintPlate } from '../components/constraintPlate';
 import { createControlButton, setUnavailable } from '../components/controlButton';
-import { createExperimentLog } from '../components/experimentLog';
-import { createInputSpaceMap } from '../components/inputSpaceMap';
+import { createExperimentLog, type ExperimentLog } from '../components/experimentLog';
+import { createInputSpaceMap, type InputSpaceMap } from '../components/inputSpaceMap';
 import { createPanel } from '../components/panel';
 import { createStatusIndicator, setStatusLabel } from '../components/statusIndicator';
 import { createElement, restartAnimation, uniqueId } from '../dom';
-import { Q_COPY } from '../../../qcopy';
+import type { Bit } from '../../../quantum';
 
-/** How long an announcement stays in the page: long enough for a screen reader to have picked it up. */
 const ANNOUNCEMENT_LIFETIME_MS = 4000;
 
 export interface LaboratoryViewOptions {
-  /** 1-based level number shown in the progression indicator. */
-  levelNumber: number;
+  levelNumber: number | string;
+  levelName: string;
   objective: string;
   inputLength: number;
+  streak: number;
+  targetStreak: number;
   onToggleBit: (index: number) => void;
   onFocusBit: (index: number) => void;
   onAsk: () => void;
+  onFireQuantumProbe: () => void;
   onReturn: () => void;
-  /** Whether the player has already observed THE BOX in this session. */
-onEnterQuantumMode?: () => void;
-  /** The player chose one of the two kinds of machine as their conclusion. */
   onConclude: (kind: OracleKind) => void;
 }
 
 export interface LaboratoryView {
   readonly element: HTMLElement;
-  /**
-   * Draws the binary input the player is composing, and what the record
-   * already holds for it: the entry of the query that tested it, or `null`
-   * if it is untested.
-   */
   renderInput(state: BinaryInputState, recorded: OracleQuery | null): void;
-  /** Moves keyboard focus to follow the typing cursor, but only if focus is already inside the input. */
   followCursor(state: BinaryInputState): void;
-  /** True when keyboard focus is on one of the input's bits. */
   inputHasFocus(): boolean;
-  /** While the machine is working, the input and the ask control cannot be used. */
   setProcessing(processing: boolean): void;
-  /** Adds an answered query to the record: the experiment log and the input space. With `animate` off it is simply there. */
   recordQuery(query: OracleQuery, animate?: boolean): void;
-  /** Draws the counts: queries used, and inputs tested and untested. */
-  renderProgress(progress: InvestigationProgress): void;
-  /**
-   * The player asked about an input that is already on record. Points to the
-   * entry and says that no query was used; the machine is not involved.
-   */
+  renderProgress(progress: InvestigationProgress, queriesLeft?: number): void;
+  updateTally(zeros: number, ones: number): void;
   showRecalled(query: OracleQuery): void;
-  /**
-   * Shows the laboratory's remark on the investigation, or none. A new remark
-   * arrives — it fades in and is announced — unless `arrive` is off, as when
-   * the player comes back to an investigation already under way.
-   */
   showNote(note: InvestigationNote | null, arrive?: boolean): void;
-  /**
-   * Discloses the constraint the machine is under, above the machine. It
-   * arrives part by part and is announced — unless `arrive` is off, when it
-   * is simply there. Until this is called, nothing of it can be seen.
-   */
   revealPromise(arrive?: boolean): void;
-  /**
-   * Sets the task that follows from the constraint: the objective changes,
-   * and the record gains the evidence that bears on it and a place for the
-   * player's conclusion. This comes after the constraint, once the two kinds
-   * have been described and named.
-   */
   setClassificationTask(objective: string, arrive?: boolean): void;
-  /**
-   * Draws the evidence, the conclusion on record and how it stands. A change
-   * in the conclusion or in its standing is announced, unless `announceChange`
-   * is off.
-   */
   renderClassification(state: ClassificationState, announceChange?: boolean): void;
+  showDetectorReadout(text: string): void;
+  setQuantumProbeAvailable(available: boolean, queriesLeft: number): void;
+  setPulseClassify(pulse: boolean): void;
+  renderLevelInfo(levelName: string, streak: number, targetStreak: number, timer?: number | null): void;
+  flashCorrect(): void;
+  revealAllGrid(outputs: Bit[]): void;
+  setSuperpositionGrid(active: boolean): void;
+  resetForLength(newLength: number): void;
+  clearLog(): void;
 }
 
-/**
- * The laboratory interface (layout: `.laboratory` in views.css and oracle.css):
- * the input console under the machine, the map of the input space on one side
- * and the experiment log on the other, and the HUD around the edges. The
- * middle is left clear for the canvas, where the machine itself is drawn.
- *
- * Once the laboratory discloses it, the constraint the machine is under is
- * printed above the machine.
- */
 export function createLaboratoryView(options: LaboratoryViewOptions): LaboratoryView {
-  const { levelNumber, objective, inputLength, onToggleBit, onFocusBit, onAsk, onReturn, onConclude, onEnterQuantumMode } =
-    options;
+  const {
+    levelName,
+    objective,
+    inputLength,
+    streak,
+    targetStreak,
+    onToggleBit,
+    onFocusBit,
+    onAsk,
+    onFireQuantumProbe,
+    onReturn,
+    onConclude,
+  } = options;
+
+  let currentLength = inputLength;
   const titleId = uniqueId('laboratory-title');
   const inputLabelId = uniqueId('input-label');
   const { title } = GAME_IDENTITY;
   const { record } = INVESTIGATION_COPY;
+
+  const levelText = createElement('p', {
+    className: 'readout',
+    text: `${levelName} | STREAK: ${streak}/${targetStreak === Infinity ? '∞' : targetStreak}`,
+  });
+
+  const timerText = createElement('span', { className: 'timer-readout', text: '' });
+  timerText.style.display = 'none';
+
+  const muteBtn = createElement('button', {
+    className: 'mute-btn',
+    text: audioManager.isMuted ? 'SOUND: OFF' : 'SOUND: ON',
+    attributes: { type: 'button', 'aria-label': 'Toggle audio mute' },
+  });
+  muteBtn.addEventListener('click', () => {
+    const isMuted = audioManager.toggleMute();
+    muteBtn.textContent = isMuted ? 'SOUND: OFF' : 'SOUND: ON';
+  });
 
   const header = createElement('header', { className: 'laboratory__header' }, [
     createElement('h1', {
@@ -112,62 +108,67 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
       text: `${title.article} ${title.name}`,
       attributes: { id: titleId },
     }),
-    createElement('p', {
-      className: 'readout',
-      text: formatCounter(levelNumber, LEVEL_COUNT),
-      attributes: { 'aria-label': `Level ${levelNumber} of ${LEVEL_COUNT}` },
-    }),
+    createElement('div', { attributes: { style: 'display: flex; align-items: center; gap: 1rem;' } }, [
+      levelText,
+      timerText,
+      muteBtn,
+    ]),
   ]);
 
-  // The canvas is hidden from assistive technology, so the scene is described in words.
   const sceneDescription = createElement('p', {
     className: 'visually-hidden',
-    text: 'A matte black machine with a single circular aperture stands in the centre of the laboratory. Its answer to each input appears in the aperture and in the experiment log. A map of the input space shows which of the possible inputs have been tested.',
+    text: 'A matte black machine with a circular aperture stands in the centre of the laboratory. The Oracle accepts a binary input and returns a single bit. The rule is unknown.',
   });
 
-  const bitInput = createBitInput({
-    length: inputLength,
+  let bitInput: BitInput = createBitInput({
+    length: currentLength,
     labelledBy: inputLabelId,
     onToggle: onToggleBit,
     onFocusBit,
     onSubmit: onAsk,
   });
+
   const askButton = createControlButton({
     label: 'ASK',
     onActivate: onAsk,
     shortcut: { label: 'ENTER', ariaKey: 'Enter' },
   });
-  // What the record holds for the input as it stands. It changes with every digit, so it is not a live region.
+
+  const quantumProbeButton = createControlButton({
+    label: 'FIRE QUANTUM PROBE',
+    variant: 'quiet',
+    onActivate: onFireQuantumProbe,
+  });
+  quantumProbeButton.style.display = 'none';
+
+  const detectorReadout = createElement('p', { className: 'detector-readout', text: '' });
+  detectorReadout.style.display = 'none';
+
   const recordLine = createElement('p', { className: 'readout console__record', text: record.untested });
   const inputConsole = createElement('div', { className: 'console' }, [
     createElement('p', { className: 'readout console__label', text: 'INPUT', attributes: { id: inputLabelId } }),
     bitInput.element,
     askButton,
+    quantumProbeButton,
     recordLine,
+    detectorReadout,
   ]);
 
   const noteLine = createElement('p', { className: 'laboratory__note' });
 
-  // What is known about the machine, and what the record says about it. Both are built now and kept out of
-  // sight — and out of reach of the keyboard and of screen readers — until the laboratory discloses them.
+  // Constraint and classification record
   const constraint = createConstraintPlate(inputSpaceSize(inputLength));
   constraint.element.hidden = true;
   const classificationRecord = createClassificationRecord({ onConclude });
   classificationRecord.element.hidden = true;
 
-  const inputSpace = createInputSpaceMap(inputLength);
-  const experimentLog = createExperimentLog(classificationRecord.element);
+  let inputSpace: InputSpaceMap = createInputSpaceMap(currentLength);
+  const experimentLog: ExperimentLog = createExperimentLog(classificationRecord.element);
   const systemStatus = createStatusIndicator('ONLINE');
   const objectiveText = createElement('p', { className: 'panel__text', text: objective });
 
-  // The one place a screen reader is told about things as they happen: a repeated input, and each new remark.
   const announcer = createElement('p', { className: 'visually-hidden', attributes: { role: 'status' } });
 
-  /**
-   * Says something once. The words are taken away again shortly afterwards:
-   * left in the page they would go stale — the visible text they repeat moves
-   * on — and would be read a second time by anyone reading the page through.
-   */
   function announce(message: string): void {
     announcer.textContent = message;
     window.setTimeout(() => {
@@ -177,18 +178,33 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
     }, ANNOUNCEMENT_LIFETIME_MS);
   }
 
-  const quantumModeButton = createControlButton({
-    label: Q_COPY.enter,
-    variant: 'quiet',
-    onActivate: () => onEnterQuantumMode?.(),
+  // Two permanent decision controls at the bottom using ORACLE_KINDS
+  const kind0 = ORACLE_KINDS[0];
+  const kind1 = ORACLE_KINDS[1];
+
+  const classifyBtn0 = createControlButton({
+    label: 'CLASSIFY: ' + PROMISE_COPY.rules[kind0].name,
+    variant: 'primary',
+    onActivate: () => onConclude(kind0),
   });
-  quantumModeButton.hidden = true;
+  classifyBtn0.classList.add('classify-btn-0');
+
+  const classifyBtn1 = createControlButton({
+    label: 'CLASSIFY: ' + PROMISE_COPY.rules[kind1].name,
+    variant: 'primary',
+    onActivate: () => onConclude(kind1),
+  });
+  classifyBtn1.classList.add('classify-btn-1');
+
+  const classificationActions = createElement('div', { className: 'classification-actions' }, [
+    classifyBtn0,
+    classifyBtn1,
+  ]);
 
   const footer = createElement('footer', { className: 'laboratory__footer' }, [
     createPanel({ heading: 'OBJECTIVE', content: [objectiveText] }),
     createElement('div', { className: 'laboratory__actions' }, [
-      quantumModeButton,
-      
+      classificationActions,
       createControlButton({
         label: 'RETURN',
         variant: 'quiet',
@@ -199,17 +215,19 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
     createPanel({ heading: 'SYSTEM STATUS', content: [systemStatus] }),
   ]);
 
+  const spaceContainer = createElement('aside', { className: 'laboratory__space' }, [inputSpace.element]);
+
   const element = createElement('section', { className: 'view laboratory', attributes: { 'aria-labelledby': titleId } }, [
     header,
     sceneDescription,
     createElement('div', { className: 'laboratory__constraint' }, [constraint.element]),
     createElement('div', { className: 'laboratory__console' }, [inputConsole, noteLine]),
-    createElement('aside', { className: 'laboratory__space' }, [inputSpace.element]),
+    spaceContainer,
     createElement('aside', { className: 'laboratory__log' }, [experimentLog.element]),
     footer,
     announcer,
   ]);
-  // The console sits a fixed distance below the machine, wherever the scene places the machine.
+
   element.style.setProperty('--machine-offset-y', String(MACHINE_CENTER_Y - DESIGN_HEIGHT / 2));
 
   return {
@@ -217,7 +235,6 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
 
     renderInput(state, recorded) {
       bitInput.render(state);
-      // The same input, seen three ways: as bits, as a place in the input space, and as an entry in the log.
       inputSpace.setCursor(toBinaryString(state));
       experimentLog.setCurrent(recorded);
 
@@ -226,13 +243,11 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
     },
 
     followCursor(state) {
-      if (!bitInput.hasFocus()) {
-        return;
-      }
-      if (state.cursor < inputLength) {
+      if (!bitInput.hasFocus()) return;
+      if (state.cursor < currentLength) {
         bitInput.focusBit(state.cursor);
       } else {
-        askButton.focus(); // Every bit has been typed; the next thing to do is ask.
+        askButton.focus();
       }
     },
 
@@ -243,6 +258,7 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
     setProcessing(processing) {
       bitInput.setUnavailable(processing);
       setUnavailable(askButton, processing);
+      setUnavailable(quantumProbeButton, processing);
       setStatusLabel(systemStatus, processing ? 'PROCESSING' : 'ONLINE');
     },
 
@@ -251,13 +267,16 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
       inputSpace.mark(query, animate);
     },
 
-    renderProgress(progress) {
-      experimentLog.renderCount(progress.queryCount);
+    renderProgress(progress, queriesLeft = 0) {
+      experimentLog.renderCount(queriesLeft);
       inputSpace.renderProgress(progress);
     },
 
+    updateTally(zeros, ones) {
+      experimentLog.updateTally(zeros, ones);
+    },
+
     showRecalled(query) {
-      // Two phrases, each kept whole: in a window too narrow for one line, the break falls between them.
       recordLine.replaceChildren(
         createElement('span', { text: `${record.tested(query)} ·` }),
         ' ',
@@ -275,7 +294,6 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
       noteLine.dataset.stage = stage;
       noteLine.textContent = note?.text ?? '';
 
-      // A remark whose numbers have merely kept up with the record has not arrived again.
       if (note && isNewRemark && arrive) {
         restartAnimation(noteLine, 'data-arrived');
         announce(note.text);
@@ -284,7 +302,6 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
 
     revealPromise(arrive = true) {
       constraint.element.hidden = false;
-      if (onEnterQuantumMode) { quantumModeButton.style.display = 'block'; }
       if (arrive) {
         constraint.arrive();
         announce(PROMISE_COPY.announcement);
@@ -303,8 +320,6 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
 
     renderClassification(state, announceChange = true) {
       classificationRecord.render(state);
-
-      // What is worth saying aloud is a change in the conclusion or in how it stands — not a count that has moved on by one.
       const drawn = `${state.conclusion ?? ''}:${state.standing ?? ''}`;
       const changed = classificationRecord.element.dataset.drawn !== undefined && classificationRecord.element.dataset.drawn !== drawn;
       classificationRecord.element.dataset.drawn = drawn;
@@ -312,6 +327,85 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
       if (changed && announceChange) {
         announce(PROMISE_COPY.conclusion.announcement(state.conclusion, state.evidence));
       }
+    },
+
+    showDetectorReadout(text) {
+      detectorReadout.textContent = text;
+      detectorReadout.style.display = text ? 'block' : 'none';
+      if (text) {
+        announce(text);
+      }
+    },
+
+    setQuantumProbeAvailable(available, queriesLeft) {
+      quantumProbeButton.style.display = available ? 'inline-block' : 'none';
+      if (available) {
+        setUnavailable(quantumProbeButton, queriesLeft <= 0);
+        quantumProbeButton.querySelector('.control__label')!.textContent =
+          queriesLeft > 0 ? 'FIRE QUANTUM PROBE' : 'PROBE EXHAUSTED';
+      }
+    },
+
+    setPulseClassify(pulse) {
+      if (pulse) {
+        classifyBtn0.classList.add('pulse-attention');
+        classifyBtn1.classList.add('pulse-attention');
+        setUnavailable(askButton, true);
+      } else {
+        classifyBtn0.classList.remove('pulse-attention');
+        classifyBtn1.classList.remove('pulse-attention');
+      }
+    },
+
+    renderLevelInfo(name, currentStreak, goalStreak, timer) {
+      levelText.textContent = `${name} | STREAK: ${currentStreak}/${goalStreak === Infinity ? '∞' : goalStreak}`;
+      if (timer !== null && timer !== undefined) {
+        timerText.style.display = 'inline-block';
+        timerText.textContent = `TIME: ${timer}s`;
+      } else {
+        timerText.style.display = 'none';
+      }
+    },
+
+    flashCorrect() {
+      const flash = createElement('div', { className: 'flash-correct' });
+      element.appendChild(flash);
+      setTimeout(() => flash.remove(), 400);
+    },
+
+    revealAllGrid(outputs) {
+      inputSpace.revealAll(outputs);
+    },
+
+    setSuperpositionGrid(active) {
+      inputSpace.setSuperposition(active);
+    },
+
+    resetForLength(newLength) {
+      currentLength = newLength;
+      bitInput.element.remove();
+
+      bitInput = createBitInput({
+        length: currentLength,
+        labelledBy: inputLabelId,
+        onToggle: onToggleBit,
+        onFocusBit,
+        onSubmit: onAsk,
+      });
+
+      inputConsole.insertBefore(bitInput.element, askButton);
+      inputSpace.reset(currentLength);
+      detectorReadout.style.display = 'none';
+      detectorReadout.textContent = '';
+      this.setPulseClassify(false);
+    },
+
+    clearLog() {
+      experimentLog.clear();
+      inputSpace.reset(currentLength);
+      detectorReadout.style.display = 'none';
+      detectorReadout.textContent = '';
+      this.setPulseClassify(false);
     },
   };
 }

@@ -1,575 +1,304 @@
 /*
- * Components for operating the machine and keeping the record of it: the
- * binary input, the console that holds it, the experiment log, and the map of
- * the input space. Builders are in src/game/ui/components/.
+ * Styles for the machine and the laboratory (layout in views.css).
  */
 
-/* ---------- Console: label, bits, the ask control and the record line ---------- */
+/* ---------- The Machine ---------- */
+
+.laboratory .stage__canvas {
+  /*
+   * The machine sits behind the HTML controls, but in front of the backdrop.
+   * Clicking the aperture does nothing: asking is done through the console.
+   */
+  pointer-events: none;
+}
+
+/* ---------- The Input Console ---------- */
 
 .console {
-  display: grid;
-  grid-template-columns: auto auto;
-  column-gap: calc(20 * var(--u));
-  row-gap: calc(10 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(12 * var(--u));
 }
 
 .console__label {
-  grid-column: 1 / -1;
+  font-size: var(--type-caption);
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-secondary);
 }
 
-/* The ask control is as tall as the bits beside it. */
-.console .control {
-  align-self: stretch;
-}
-
-/*
- * The record line: what the record holds for the input as it stands. It
- * never widens the console — it takes the width the bits and the ask control
- * have set, and wraps inside that if a window is too narrow for one line.
- */
 .console__record {
-  grid-column: 1 / -1;
-  width: 0;
-  min-width: 100%;
-  /* Clears the typing cursor, which hangs below the bits. */
-  margin-top: calc(8 * var(--u));
-  line-height: 1.5;
-  white-space: normal;
+  font-size: var(--type-caption);
+  color: var(--color-text-secondary);
+  min-height: calc(18 * var(--u));
 }
 
-/* A phrase of the line stays whole; the line only ever breaks between phrases. */
-.console__record span {
-  white-space: nowrap;
-}
-
-/*
- * The player asked about an input that is already on record. The line says
- * that no query was used, and steps forward — heavier, and in full black, so
- * the change is not carried by a flicker alone.
- */
 .console__record[data-recalled] {
-  color: var(--color-text-primary);
-  font-weight: 500;
-  animation: record-recalled 420ms var(--ease-precise);
+  animation: console-recalled 600ms var(--ease-precise) both;
 }
 
-@keyframes record-recalled {
-  from {
-    opacity: 0.15;
+@keyframes console-recalled {
+  0% {
+    color: var(--color-text-primary);
+  }
+  100% {
+    color: var(--color-text-secondary);
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .console__record[data-recalled] {
-    animation: none;
-  }
-}
-
-/*
- * In the narrowest windows the game still runs in (900–1099px), the console
- * and the log would meet. Dropping the key hint from the ask control keeps
- * them apart; Enter still works.
- */
-@media (max-width: 1099px) {
-  .console .control__shortcut {
-    display: none;
-  }
-}
-
-/* ---------- Bit input: a row of bits set by hand ---------- */
+/* ---------- Bit Input ---------- */
 
 .bit-input {
   display: flex;
   gap: calc(8 * var(--u));
 }
 
-/*
- * One bit. A 0 is an empty cell and a 1 a filled one, so a pattern can be
- * read at a glance — but the digit is always printed too, so the value never
- * depends on telling light from dark.
- */
 .bit {
-  position: relative;
-  width: max(36px, calc(46 * var(--u)));
-  height: max(44px, calc(58 * var(--u)));
+  width: calc(44 * var(--u));
+  height: calc(56 * var(--u));
   padding: 0;
-  border: var(--hairline) solid var(--color-text-primary);
-  border-radius: var(--radius);
-  background-color: transparent;
+  border: var(--hairline) solid var(--color-border);
+  background-color: var(--color-surface);
   color: var(--color-text-primary);
   font-family: var(--font-machine);
-  font-size: max(16px, calc(22 * var(--u)));
+  font-size: var(--type-title);
   font-weight: 500;
   line-height: 1;
   cursor: pointer;
-  pointer-events: auto;
+  border-radius: 0;
   transition:
-    background-color var(--motion-control) var(--ease-precise),
-    color var(--motion-control) var(--ease-precise),
-    transform var(--motion-control) var(--ease-precise);
+    border-color var(--duration-fast) var(--ease-precise),
+    background-color var(--duration-fast) var(--ease-precise),
+    box-shadow var(--duration-fast) var(--ease-precise);
 }
 
-.bit[data-value='1'] {
-  background-color: var(--color-text-primary);
-  color: var(--color-background);
+.bit:hover:not(:disabled) {
+  border-color: var(--color-text-primary);
 }
 
-.bit:not([aria-disabled='true']):hover {
-  transform: translateY(-1px);
+.bit:focus-visible {
+  outline: none;
+  border-color: var(--color-text-primary);
+  box-shadow: 0 0 0 calc(1 * var(--u)) var(--color-text-primary);
 }
 
-.bit[data-value='0']:not([aria-disabled='true']):hover {
+.bit[data-cursor] {
+  border-bottom-width: calc(3 * var(--u));
+  border-bottom-color: var(--color-text-primary);
+}
+
+.bit:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* ---------- Input Space Map ---------- */
+
+.input-space {
+  display: flex;
+  flex-direction: column;
+  gap: calc(12 * var(--u));
+}
+
+.input-space__summary {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-machine);
+  font-size: var(--type-caption);
+  color: var(--color-text-secondary);
+}
+
+.input-space__map {
+  display: flex;
+  flex-direction: column;
+  gap: calc(4 * var(--u));
+}
+
+.input-space__grid {
+  display: grid;
+  grid-template-columns: repeat(var(--columns, 8), 1fr);
+  gap: calc(3 * var(--u));
+}
+
+.input-space__cell {
+  aspect-ratio: 1;
+  border: var(--hairline) solid var(--color-border);
   background-color: var(--color-surface);
+  color: transparent;
+  font-family: var(--font-machine);
+  font-size: 0;
+  border-radius: 0;
+  transition:
+    background-color var(--duration-fast) var(--ease-precise),
+    border-color var(--duration-fast) var(--ease-precise);
 }
 
-.bit:not([aria-disabled='true']):active {
-  transform: translateY(0);
-  transition-duration: 60ms;
+.input-space__cell[data-output="0"] {
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: calc(9 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.bit[aria-disabled='true'] {
-  opacity: 0.55;
-  cursor: not-allowed;
+.input-space__cell[data-output="1"] {
+  background-color: var(--color-machine-black);
+  border-color: var(--color-machine-black);
+  color: var(--color-background);
+  font-size: calc(9 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Typing cursor: a short rule under the bit the next typed digit will set. */
-.bit[data-cursor]::after {
-  content: '';
-  position: absolute;
-  right: 20%;
-  bottom: calc(-7 * var(--u));
-  left: 20%;
-  height: 2px;
-  background: var(--color-text-primary);
+.input-space__cell[data-cursor] {
+  box-shadow: 0 0 0 calc(1.5 * var(--u)) var(--color-text-primary);
+  border-color: var(--color-text-primary);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .bit:not([aria-disabled='true']):hover {
-    transform: none;
+.input-space__cell[data-arrived] {
+  animation: cell-arrived 300ms var(--ease-precise) both;
+}
+
+@keyframes cell-arrived {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
-/* ---------- Experiment log ---------- */
+.input-space__end {
+  font-family: var(--font-machine);
+  font-size: calc(10 * var(--u));
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+}
+
+.input-space__end--last {
+  text-align: right;
+}
+
+.input-space__counts {
+  display: flex;
+  justify-content: space-between;
+  border-top: var(--hairline) solid var(--color-border);
+  padding-top: calc(8 * var(--u));
+}
+
+.input-space__count {
+  display: flex;
+  gap: calc(8 * var(--u));
+  font-family: var(--font-machine);
+  font-size: var(--type-caption);
+  color: var(--color-text-secondary);
+}
+
+/* ---------- Experiment Log ---------- */
 
 .log {
   display: flex;
   flex-direction: column;
-  /* Grows with its entries up to this height, then scrolls. */
-  max-height: calc(520 * var(--u));
-}
-
-.log .panel__content {
-  display: flex;
-  min-height: 0;
-  flex-direction: column;
-  font-family: var(--font-machine);
-  font-size: var(--type-micro);
-  line-height: 1;
-  letter-spacing: var(--tracking-machine);
 }
 
 .log__count {
   display: flex;
   justify-content: space-between;
-  padding-bottom: calc(10 * var(--u));
-  border-bottom: var(--hairline) solid var(--color-border);
+  font-family: var(--font-machine);
+  font-size: var(--type-caption);
+  color: var(--color-text-secondary);
+  margin-bottom: calc(8 * var(--u));
 }
 
 .log__empty {
-  padding-top: calc(12 * var(--u));
-}
-
-/*
- * ---------- Classification: the evidence, and the conclusion drawn from it ----------
- *
- * Part of the record, at its head: which outputs have been observed, and the
- * conclusion the player has put on record with how it stands. Hidden until
- * the laboratory has disclosed the constraint and set the task.
- */
-
-.classification {
-  display: grid;
-  /* Nothing here shrinks to make room for the entries; it is the entries that scroll. */
-  flex: none;
-  row-gap: calc(10 * var(--u));
-  padding: calc(10 * var(--u)) 0 calc(12 * var(--u));
-  border-bottom: var(--hairline) solid var(--color-border);
-}
-
-/* `hidden` must win over the display value above. */
-.classification[hidden] {
-  display: none;
-}
-
-.classification__row {
-  display: flex;
-  justify-content: space-between;
-}
-
-.classification__conclusion {
-  display: grid;
-  row-gap: calc(8 * var(--u));
-}
-
-/* The two kinds, side by side and equal: neither is offered as the likelier. */
-.classification__choices {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  column-gap: calc(8 * var(--u));
-}
-
-/* The evidence that decides how the conclusion stands. The line is kept even when empty, so recording a conclusion moves nothing. */
-.classification__reason {
-  min-height: 1em;
-}
-
-/* The task arriving, once the constraint above the machine has been read out in full. */
-.classification[data-arrived] {
-  animation: classification-arrive 520ms var(--ease-precise);
-}
-
-@keyframes classification-arrive {
-  from {
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .classification[data-arrived] {
-    animation: none;
-  }
+  font-family: var(--font-machine);
+  font-size: var(--type-caption);
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+  text-align: center;
+  padding: calc(24 * var(--u)) 0;
 }
 
 .log__scroll {
-  min-height: 0;
+  flex: 1;
   overflow-y: auto;
-  /* Lets the pointer scroll it; the rest of the interface layer ignores the pointer. */
-  pointer-events: auto;
-  /*
-   * No scrollbar is drawn: on some systems it would sit on top of the output
-   * column. The log follows its newest entry by itself, and older entries are
-   * reached with the wheel, a trackpad or the arrow keys.
-   */
-  scrollbar-width: none;
-}
-
-.log__scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.log__scroll:focus-visible {
-  outline-offset: -2px;
+  max-height: calc(360 * var(--u));
 }
 
 .log__table {
   width: 100%;
   border-collapse: collapse;
-  font-variant-numeric: tabular-nums;
+  font-family: var(--font-machine);
+  font-size: var(--type-caption);
+  line-height: calc(20 * var(--u));
 }
 
-.log__table th,
-.log__table td {
-  padding: calc(7 * var(--u)) 0;
-  font-weight: 400;
+.log__table th {
   text-align: left;
-  white-space: nowrap;
-}
-
-.log__table th:last-child,
-.log__table td:last-child {
-  text-align: right;
-}
-
-/* The column headings stay in view while the entries scroll beneath them. */
-.log__table thead th {
+  font-weight: normal;
+  color: var(--color-text-secondary);
+  border-bottom: var(--hairline) solid var(--color-border);
+  padding: calc(4 * var(--u)) 0;
   position: sticky;
   top: 0;
-  /* Above the entries, whose first cells are positioned for the marker. */
-  z-index: 1;
-  padding-top: calc(12 * var(--u));
-  background: var(--color-surface);
-}
-
-/*
- * A rule along the bottom of the headings that travels with them, so an entry
- * sliding under the headings is cut off at a line rather than in mid-air. It
- * is drawn as part of each heading because, in a collapsed table, a cell's
- * border stays behind when the cell sticks, and its shadow is not painted.
- */
-.log__table thead th::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: var(--hairline);
-  background: var(--color-border);
+  background-color: var(--color-background);
 }
 
 .log__table td {
-  border-top: var(--hairline) solid var(--color-border);
+  padding: calc(3 * var(--u)) 0;
 }
 
-/* The first column keeps a gutter for the markers, so every entry lines up whether or not it is marked. */
-.log__table th:first-child,
-.log__table td:first-child {
-  padding-left: 1.3em;
-}
-
-.log__table td:first-child {
-  position: relative;
-}
-
-/* The newest entry is marked with the signal dot, and set slightly heavier so it is not marked by colour alone. */
 .log__table tr[data-latest] td {
-  font-weight: 600;
-}
-
-.log__table tr[data-latest] td:first-child::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0.15em;
-  width: 0.5em;
-  height: 0.5em;
-  margin-top: -0.25em;
-  border-radius: 50%;
-  background: var(--color-signal-red);
-}
-
-/*
- * The entry for the input the player is composing, if the record has one: a
- * ring in the gutter (around the dot, when it is also the newest entry) and a
- * tinted row. The ring means the tint is not the only thing marking it.
- */
-.log__table tr[aria-current] td {
-  background-color: color-mix(in srgb, var(--color-border) 60%, transparent);
-}
-
-.log__table tr[aria-current] td:first-child::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 0.8em;
-  height: 0.8em;
-  margin-top: -0.4em;
-  border: var(--hairline) solid var(--color-text-primary);
-  border-radius: 50%;
-}
-
-/* An entry that has just been recalled, in place of a repeated query: the row darkens for a moment, then settles. */
-.log__table tr[data-recalled] td {
-  animation: log-recalled 900ms var(--ease-precise);
-}
-
-@keyframes log-recalled {
-  from {
-    background-color: color-mix(in srgb, var(--color-text-primary) 26%, transparent);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .log__table tr[data-recalled] td {
-    animation: none;
-  }
-}
-
-/* ---------- Input space: one cell for every possible input ---------- */
-
-.input-space .panel__content {
-  font-family: var(--font-machine);
-  font-size: var(--type-micro);
-  line-height: 1;
-  letter-spacing: var(--tracking-machine);
-}
-
-.input-space__summary,
-.input-space__count {
-  display: flex;
-  justify-content: space-between;
-}
-
-.input-space__summary {
-  padding-bottom: calc(10 * var(--u));
-  border-bottom: var(--hairline) solid var(--color-border);
-}
-
-.input-space__map {
-  padding: calc(12 * var(--u)) 0;
-}
-
-/* The first and the last input, printed at the corners of the grid they occupy. */
-.input-space__end {
-  display: block;
-}
-
-.input-space__end--last {
-  /* Letter-spacing leaves a gap after the last digit; pull it back so the digits end on the grid's edge. */
-  margin-right: calc(-1 * var(--tracking-machine));
-  text-align: right;
-}
-
-.input-space__grid {
-  display: grid;
-  grid-template-columns: repeat(var(--columns), 1fr);
-  gap: calc(6 * var(--u));
-  margin: calc(9 * var(--u)) 0;
-}
-
-/*
- * One possible input. Untested, it is an empty outline. Tested, it shows the
- * answer the way a bit of the input does: a 0 is an open cell and a 1 a
- * filled one, with the digit printed in both.
- */
-.input-space__cell {
-  position: relative;
-  display: grid;
-  aspect-ratio: 1;
-  place-items: center;
-  border: var(--hairline) solid var(--color-border);
-  border-radius: 2px;
-  font-weight: 500;
-  letter-spacing: 0;
-}
-
-.input-space__cell[data-output] {
-  border-color: var(--color-text-primary);
-}
-
-.input-space__cell[data-output='1'] {
-  background-color: var(--color-text-primary);
-  color: var(--color-background);
-}
-
-/* An answer arriving in its cell. */
-.input-space__cell[data-arrived] {
-  animation: input-space-arrive 260ms var(--ease-precise);
-}
-
-@keyframes input-space-arrive {
-  from {
-    opacity: 0.2;
-    transform: scale(0.55);
-  }
-}
-
-/*
- * The input the player is composing: four corner marks around its cell, like
- * the reticle of a measuring instrument. Drawn outside the cell, so the mark
- * reads the same on an empty, an open and a filled cell.
- */
-.input-space__cell[data-cursor]::after {
-  --mark: var(--color-text-primary);
-  --arm: 34%;
-  --stroke: 1.5px;
-
-  content: '';
-  position: absolute;
-  inset: calc(-1 * max(3px, 4 * var(--u)));
-  background:
-    linear-gradient(var(--mark), var(--mark)) left top / var(--arm) var(--stroke),
-    linear-gradient(var(--mark), var(--mark)) left top / var(--stroke) var(--arm),
-    linear-gradient(var(--mark), var(--mark)) right top / var(--arm) var(--stroke),
-    linear-gradient(var(--mark), var(--mark)) right top / var(--stroke) var(--arm),
-    linear-gradient(var(--mark), var(--mark)) left bottom / var(--arm) var(--stroke),
-    linear-gradient(var(--mark), var(--mark)) left bottom / var(--stroke) var(--arm),
-    linear-gradient(var(--mark), var(--mark)) right bottom / var(--arm) var(--stroke),
-    linear-gradient(var(--mark), var(--mark)) right bottom / var(--stroke) var(--arm);
-  background-repeat: no-repeat;
-}
-
-.input-space__counts {
-  display: grid;
-  row-gap: calc(10 * var(--u));
-  padding-top: calc(12 * var(--u));
-  border-top: var(--hairline) solid var(--color-border);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .input-space__cell[data-arrived] {
-    animation: none;
-  }
-}
-
-/*
- * ---------- Constraint: what is known about the machine, printed above it ----------
- *
- * That the machine obeys one of two rules; what a machine under each rule
- * does; and what the two are called. It is set on the paper itself, not on a
- * panel: a statement about the machine, like the plate on an instrument.
- */
-
-.constraint {
-  /*
-   * How long each part takes to arrive. The laboratory waits for the last
-   * part before it sets the task (PROMISE_TIMING in promiseConfig.ts; a test
-   * keeps the two in step).
-   */
-  --constraint-arrival: 520ms;
-
-  text-align: center;
-}
-
-.constraint__heading {
-  display: flex;
-  justify-content: center;
-}
-
-.constraint__statement {
-  margin-top: calc(10 * var(--u));
-  line-height: 1.4;
-}
-
-/* The two rules, side by side and equal, with a hairline between them. */
-.constraint__rules {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  margin: calc(14 * var(--u)) 0 0;
-}
-
-.constraint__rules::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: var(--hairline);
-  background: var(--color-border);
-}
-
-.constraint__rule {
-  padding: 0 calc(16 * var(--u));
-}
-
-/* The name of a kind, in full black; how the inputs divide under it, in grey beside it. */
-.constraint__name {
   color: var(--color-text-primary);
   font-weight: 500;
 }
 
-.constraint__split {
-  color: var(--color-text-secondary);
-  font-weight: 400;
+.log__table tr[aria-current="true"] td {
+  color: var(--color-signal-red);
 }
 
-/* What a machine of that kind does. */
-.constraint__behaviour {
-  margin: calc(7 * var(--u)) 0 0;
-  color: var(--color-text-secondary);
-  font-size: var(--type-small);
-  line-height: 1.4;
-  text-wrap: balance;
+.log__table tr[data-recalled] {
+  animation: log-recalled 800ms var(--ease-precise) both;
 }
 
-/*
- * The arrival. The parts come in the order they are meant to be understood:
- * that there are two rules; then what a machine under each one does; and
- * only then — once the first of those has fully arrived — what the two are
- * called. These are CSS animations, which run on real time, so the text is
- * fully shown on schedule even if frames are dropped.
- */
+@keyframes log-recalled {
+  0%, 100% {
+    background-color: transparent;
+  }
+  20%, 60% {
+    background-color: var(--color-surface);
+  }
+}
+
+/* ---------- Remarks & Constraint ---------- */
+
+.laboratory__note {
+  font-size: var(--type-body);
+  color: var(--color-text-secondary);
+  text-align: center;
+  min-height: calc(24 * var(--u));
+}
+
+.laboratory__note[data-arrived] {
+  animation: note-arrive 400ms var(--ease-precise) both;
+}
+
+@keyframes note-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(calc(4 * var(--u)));
+  }
+}
+
+.constraint {
+  --constraint-arrival: 520ms;
+  text-align: center;
+}
+
 .constraint[data-arrived] .constraint__heading,
 .constraint[data-arrived] .constraint__statement,
 .constraint[data-arrived] .constraint__behaviour,
@@ -620,4 +349,129 @@
   .constraint[data-arrived] .constraint__rules::before {
     animation: none;
   }
+}
+
+/* ---------- Classical / Quantum Level Mode Extensions ---------- */
+
+.log__tally-bar {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--u));
+  font-family: var(--font-machine);
+  font-size: var(--type-caption);
+  padding: calc(4 * var(--u)) calc(8 * var(--u));
+  margin-bottom: calc(8 * var(--u));
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: calc(3 * var(--u));
+}
+
+.log__tally-bar--mixed {
+  border-color: var(--color-signal-red);
+  background: rgba(179, 38, 46, 0.06);
+}
+
+.tally__badge {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--color-signal-red);
+  font-weight: 600;
+}
+
+.log__count--depleted {
+  color: var(--color-signal-red) !important;
+  font-weight: bold;
+}
+
+.pulse-attention {
+  animation: pulse-attention-anim 1s ease-in-out infinite alternate !important;
+}
+
+@keyframes pulse-attention-anim {
+  from {
+    box-shadow: 0 0 0 calc(1 * var(--u)) #5146A8;
+    border-color: #5146A8;
+  }
+  to {
+    box-shadow: 0 0 calc(12 * var(--u)) calc(2 * var(--u)) #a855f7;
+    border-color: #c084fc;
+    transform: scale(1.02);
+  }
+}
+
+.quantum-superposition .input-space__cell,
+.cell--superposed {
+  background-color: rgba(168, 85, 247, 0.3) !important;
+  border-color: #a855f7 !important;
+  box-shadow: 0 0 calc(4 * var(--u)) #a855f7;
+  transition: all 0.3s ease;
+}
+
+.cell--revealed {
+  transition: all 0.2s ease;
+  font-weight: bold;
+}
+
+.cell--revealed[data-output="0"] {
+  background-color: rgba(81, 70, 168, 0.25) !important;
+  color: #3b82f6 !important;
+}
+
+.cell--revealed[data-output="1"] {
+  background-color: rgba(179, 38, 46, 0.3) !important;
+  color: var(--color-signal-red) !important;
+}
+
+.mute-btn {
+  font-family: var(--font-machine);
+  font-size: var(--type-caption);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  padding: calc(4 * var(--u)) calc(10 * var(--u));
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  border-radius: calc(3 * var(--u));
+}
+
+.mute-btn:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-text-primary);
+}
+
+.detector-readout {
+  font-family: var(--font-machine);
+  font-size: var(--type-body);
+  letter-spacing: 0.1em;
+  color: #c084fc;
+  margin-top: calc(8 * var(--u));
+  text-align: center;
+  font-weight: 600;
+}
+
+.timer-readout {
+  font-family: var(--font-machine);
+  font-size: var(--type-caption);
+  font-weight: bold;
+  color: var(--color-signal-red);
+  margin-left: calc(12 * var(--u));
+}
+
+.flash-correct {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: rgba(34, 197, 94, 0.25);
+  animation: flash-fade 0.4s ease-out forwards;
+  z-index: 99;
+}
+
+@keyframes flash-fade {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.classification-actions {
+  display: flex;
+  gap: calc(12 * var(--u));
 }

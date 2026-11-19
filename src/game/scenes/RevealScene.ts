@@ -2,12 +2,6 @@ import { SCENE_KEYS } from '../config/sceneKeys';
 import { StageScene } from './StageScene';
 import { createRevealView, type RevealView } from '../ui/views/revealView';
 
-import type { DeutschJozsaResult } from '../../quantum/deutschJozsa';
-
-export interface RevealEntry {
-  result: DeutschJozsaResult;
-}
-
 export class RevealScene extends StageScene {
   private view!: RevealView;
 
@@ -15,19 +9,18 @@ export class RevealScene extends StageScene {
     super(SCENE_KEYS.reveal);
   }
 
-  create(entry: RevealEntry): void {
+  create(): void {
     this.view = createRevealView({
-      result: entry.result,
       onNext: () => this.leaveTo(SCENE_KEYS.credits),
     });
 
     this.enterStage(this.view.element, 'dark');
 
-    let delay = 1000;
-    const pauses = [2000, 2000, 2000, 1000, 1000, 1000, 1000];
+    let delay = 600;
+    const pauses = [1000, 1200, 1200, 1400, 1200, 800];
     for (let i = 0; i <= 5; i++) {
-        this.afterDelay(delay, () => this.view.showLine(i));
-        delay += pauses[i] ?? 1000;
+      this.afterDelay(delay, () => this.view.showLine(i));
+      delay += pauses[i] ?? 1000;
     }
   }
 }
