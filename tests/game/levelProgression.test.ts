@@ -5,6 +5,8 @@ import {
   GameStateMachine,
 } from '../../src/game/systems/levelProgression';
 import { ORACLE_KINDS } from '../../src/game/systems/oracle/oracleKind';
+import { Investigation, bindInvestigationOracle } from '../../src/game/systems/oracle/Investigation';
+import { createPrototypeOracle } from '../../src/game/systems/oracle/prototypeOracle';
 
 describe('Level Progression & Oracle Generator (Specification 6)', () => {
   describe('generateOracle(bits, type)', () => {
@@ -112,6 +114,50 @@ describe('Level Progression & Oracle Generator (Specification 6)', () => {
       expect(gsm.streak).toBe(0);
       expect(outcome.fullGridMap).toBeDefined();
       expect(outcome.fullGridMap?.length).toBe(16); // 4-bit space
+    });
+
+    it('queries an input on 2-bit, 4-bit, and 6-bit levels and asserts a valid 0 or 1 output is returned every time', () => {
+      const gsm = new GameStateMachine();
+
+      // Level 1: 2-bit
+      gsm.startLevel(1);
+      expect(gsm.config.bits).toBe(2);
+      const res2 = gsm.queryClassical('01');
+      expect([0, 1]).toContain(res2.query.output);
+      expect(res2.query.input).toBe('01');
+
+      // Level 2: 4-bit
+      gsm.startLevel(2);
+      expect(gsm.config.bits).toBe(4);
+      const res4 = gsm.queryClassical('0101');
+      expect([0, 1]).toContain(res4.query.output);
+      expect(res4.query.input).toBe('0101');
+
+      // Level 3: 6-bit
+      gsm.startLevel(3);
+      expect(gsm.config.bits).toBe(6);
+      const res6 = gsm.queryClassical('010101');
+      expect([0, 1]).toContain(res6.query.output);
+      expect(res6.query.input).toBe('010101');
+    });
+
+    it('queries through bound Investigation on 2-bit, 4-bit, and 6-bit levels and returns valid 0 or 1 output', () => {
+      const gsm = new GameStateMachine();
+      const investigation = new Investigation(createPrototypeOracle());
+
+      for (const level of [1, 2, 3]) {
+        gsm.startLevel(level);
+        const bits = gsm.config.bits;
+        bindInvestigationOracle(investigation, gsm.box.gameOracle);
+
+        const input = '1'.padStart(bits, '0');
+        const outcome = investigation.ask(input);
+        expect(outcome.kind).toBe('asked');
+        expect([0, 1]).toContain(outcome.query.output);
+        expect(outcome.query.input).toBe(input);
+        expect(outcome.query.input.length).toBe(bits);
+        expect(investigation.progress.inputSpaceSize).toBe(2 ** bits);
+      }
     });
   });
 

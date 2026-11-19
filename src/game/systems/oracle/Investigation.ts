@@ -43,16 +43,24 @@ export type AskOutcome =
  * answers that have actually been obtained.
  */
 export const ORACLE_INSTANCE = Symbol('oracle');
+export const BIND_ORACLE = Symbol('bindOracle');
 
 export class Investigation {
   /** Number of bits in an input. */
-  readonly inputLength: number;
+  inputLength: number;
   /** How many different inputs there are to ask about. */
-  readonly inputSpaceSize: number;
+  inputSpaceSize: number;
 
-  readonly #oracle: GameOracle;
+  #oracle: GameOracle;
 
   constructor(oracle: GameOracle) {
+    this.#oracle = oracle;
+    (this as any)[ORACLE_INSTANCE] = oracle;
+    this.inputLength = oracle.inputLength;
+    this.inputSpaceSize = inputSpaceSize(oracle.inputLength);
+  }
+
+  [BIND_ORACLE](oracle: GameOracle): void {
     this.#oracle = oracle;
     (this as any)[ORACLE_INSTANCE] = oracle;
     this.inputLength = oracle.inputLength;
@@ -95,4 +103,9 @@ export class Investigation {
       inputSpaceSize: this.inputSpaceSize,
     });
   }
+}
+
+/** Rebinds the investigation to another machine, updating bit length and input space. */
+export function bindInvestigationOracle(investigation: Investigation, oracle: GameOracle): void {
+  (investigation as any)[BIND_ORACLE](oracle);
 }

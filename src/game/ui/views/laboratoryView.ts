@@ -395,6 +395,7 @@ export function createLaboratoryView(options: LaboratoryViewOptions): Laboratory
 
       inputConsole.insertBefore(bitInput.element, askButton);
       inputSpace.reset(currentLength);
+      experimentLog.clear();
       detectorReadout.style.display = 'none';
       detectorReadout.textContent = '';
       this.setPulseClassify(false);

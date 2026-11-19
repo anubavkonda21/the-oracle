@@ -17,7 +17,7 @@ import {
   typeBit,
   type BinaryInputState,
 } from '../systems/oracle/binaryInput';
-import { Investigation } from '../systems/oracle/Investigation';
+import { bindInvestigationOracle, Investigation } from '../systems/oracle/Investigation';
 import { Classification, promiseIsRevealed } from '../systems/oracle/Classification';
 import { createPrototypeOracle } from '../systems/oracle/prototypeOracle';
 import type { OracleQuery } from '../systems/oracle/GameOracle';
@@ -102,13 +102,15 @@ export class LaboratoryScene extends StageScene {
     const box = this.stateMachine.box;
     const cfg = this.stateMachine.config;
 
-    if (box.oracle.bits !== this.currentInputLength) {
-      this.currentInputLength = box.oracle.bits;
-      this.binaryInput = createBinaryInput(this.currentInputLength);
-      this.view.resetForLength(this.currentInputLength);
-    } else {
-      this.view.clearLog();
+    bindInvestigationOracle(this.investigation, box.gameOracle);
+
+    if (this.classification.conclusion !== null) {
+      this.classification.conclude(this.classification.conclusion);
     }
+
+    this.currentInputLength = box.oracle.bits;
+    this.binaryInput = createBinaryInput(this.currentInputLength);
+    this.view.resetForLength(this.currentInputLength);
 
     this.machine.clearAnswer();
     this.drawInput();
@@ -120,16 +122,7 @@ export class LaboratoryScene extends StageScene {
       box.timeRemaining,
     );
 
-    this.view.renderProgress(
-      {
-        queryCount: box.history.length,
-        testedCount: 0,
-        untestedCount: 2 ** this.currentInputLength,
-        inputSpaceSize: 2 ** this.currentInputLength,
-      },
-      box.queriesLeft,
-    );
-
+    this.view.renderProgress(this.investigation.progress, box.queriesLeft);
     this.view.updateTally(box.tally.zeros, box.tally.ones);
     this.view.setQuantumProbeAvailable(this.stateMachine.canFireQuantum, box.quantumQueriesLeft);
     this.view.setPulseClassify(box.queriesLeft <= 0);
@@ -224,25 +217,16 @@ export class LaboratoryScene extends StageScene {
   }
 
   private drawInput(): void {
-    const inputStr = toBinaryString(this.binaryInput);
-    const recorded = this.stateMachine.box.history.find((q) => q.input === inputStr) ?? null;
+    const inputStr = toBinaryString(this.binaryInput).padStart(this.currentInputLength, '0');
+    const recorded = this.investigation.find(inputStr) ?? null;
     this.view.renderInput(this.binaryInput, recorded);
   }
 
   private showProgress(arrive = true): void {
     const box = this.stateMachine.box;
-    const totalInputs = 2 ** this.currentInputLength;
     const progress = this.investigation.progress;
 
-    this.view.renderProgress(
-      {
-        queryCount: box.history.length,
-        testedCount: box.history.length,
-        untestedCount: totalInputs - box.history.length,
-        inputSpaceSize: totalInputs,
-      },
-      box.queriesLeft,
-    );
+    this.view.renderProgress(progress, box.queriesLeft);
     this.view.updateTally(box.tally.zeros, box.tally.ones);
     this.drawClassification(arrive);
 
@@ -284,7 +268,8 @@ export class LaboratoryScene extends StageScene {
       return;
     }
 
-    const outcome = this.investigation.ask(toBinaryString(this.binaryInput));
+    const inputStr = toBinaryString(this.binaryInput).padStart(this.currentInputLength, '0');
+    const outcome = this.investigation.ask(inputStr);
     if (outcome.kind === 'recalled') {
       this.restartTyping();
       this.view.showRecalled(outcome.query);
@@ -301,8 +286,7 @@ export class LaboratoryScene extends StageScene {
   }
 
   private answer(query: OracleQuery): void {
-    const inputStr = toBinaryString(this.binaryInput);
-    this.stateMachine.queryClassical(inputStr);
+    this.stateMachine.recordQuery(query);
 
     this.machine.showAnswer(query.output);
     this.view.recordQuery(query);

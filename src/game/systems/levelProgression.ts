@@ -258,7 +258,7 @@ export class GameStateMachine {
     return this.currentBoxState;
   }
 
-  queryClassical(input: string): { query: OracleQuery; queriesLeft: number; tally: { zeros: number; ones: number } } {
+  recordQuery(query: OracleQuery): { queriesLeft: number; tally: { zeros: number; ones: number } } {
     if (this.currentBoxState.isResolved) {
       throw new Error('This box is already classified.');
     }
@@ -266,7 +266,6 @@ export class GameStateMachine {
       throw new Error('No classical queries left for this box.');
     }
 
-    const query = this.currentBoxState.gameOracle.query(input);
     this.currentBoxState.queriesLeft -= 1;
     this.currentBoxState.history.push(query);
 
@@ -277,9 +276,20 @@ export class GameStateMachine {
     }
 
     return {
-      query,
       queriesLeft: this.currentBoxState.queriesLeft,
       tally: { ...this.currentBoxState.tally },
+    };
+  }
+
+  queryClassical(input: string): { query: OracleQuery; queriesLeft: number; tally: { zeros: number; ones: number } } {
+    const paddedInput = input.padStart(this.currentBoxState.oracle.bits, '0');
+    const query = this.currentBoxState.gameOracle.query(paddedInput);
+    const { queriesLeft, tally } = this.recordQuery(query);
+
+    return {
+      query,
+      queriesLeft,
+      tally,
     };
   }
 
