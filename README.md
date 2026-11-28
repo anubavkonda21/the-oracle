@@ -4,7 +4,8 @@
 
 A browser-playable educational quantum puzzle game for the Quriosity competition that teaches the **Deutsch–Jozsa algorithm** through interactive investigation.
 
-**Live demo:** <https://the-oracle-mu.vercel.app>
+**Live demo:** <https://the-oracle-mu.vercel.app>  
+**Concept & intuition guide:** [How THE ORACLE Works](docs/HOW_IT_WORKS.md)
 
 <!-- TODO: add gameplay screenshot/GIF -->
 [TODO: add gameplay screenshot/GIF]
